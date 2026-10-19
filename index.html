@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,8 +9,7 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
             theme: {
@@ -36,28 +34,13 @@
         }
     </script>
     <style>
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
     </style>
 </head>
-
-<body
-    class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
     <!-- Header Navigation -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
@@ -65,35 +48,29 @@
             <div class="flex justify-between items-center h-20">
                 <!-- Logo & Brand -->
                 <div class="flex items-center gap-3">
-                    <div
-                        class="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-600/30">
+                    <div class="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-600/30">
                         <i class="fa-solid fa-leaf"></i>
                     </div>
                     <div>
                         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
                             Salad, <span class="text-brand-600">Actually</span>
                         </h1>
-                        <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Order & Store Manager
-                        </p>
+                        <p class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Order & Store Manager</p>
                     </div>
                 </div>
 
                 <!-- Navigation Tabs -->
                 <nav class="flex space-x-1 sm:space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60">
-                    <button id="nav-order-btn" onclick="switchTab('order-tab')"
-                        class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-2 bg-white text-brand-700 shadow-sm">
+                    <button id="nav-order-btn" onclick="switchTab('order-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-2 bg-white text-brand-700 shadow-sm">
                         <i class="fa-solid fa-utensils"></i>
                         <span>Order Form</span>
                     </button>
-                    <button id="nav-manager-btn" onclick="switchTab('manager-tab')"
-                        class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2 relative">
+                    <button id="nav-manager-btn" onclick="switchTab('manager-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2 relative">
                         <i class="fa-solid fa-list-check"></i>
                         <span>Orders Manager</span>
-                        <span id="active-badge"
-                            class="bg-brand-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full hidden">0</span>
+                        <span id="active-badge" class="bg-brand-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full hidden">0</span>
                     </button>
-                    <button id="nav-reports-btn" onclick="switchTab('reports-tab')"
-                        class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2">
+                    <button id="nav-reports-btn" onclick="switchTab('reports-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2">
                         <i class="fa-solid fa-chart-line"></i>
                         <span>Daily Reports</span>
                     </button>
@@ -111,8 +88,7 @@
             <div class="lg:col-span-7 space-y-6">
                 <div>
                     <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Select Menu Items</h2>
-                    <p class="text-slate-500 text-sm mt-1">Add items and select quantities to build your customer's
-                        order.</p>
+                    <p class="text-slate-500 text-sm mt-1">Add items and select quantities to build your customer's order.</p>
                 </div>
 
                 <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -128,8 +104,7 @@
                             <i class="fa-solid fa-receipt text-brand-600"></i>
                             Total Order
                         </h3>
-                        <button type="button" onclick="clearCart()"
-                            class="text-xs font-bold text-rose-500 hover:text-rose-700 transition">
+                        <button type="button" onclick="clearCart()" class="text-xs font-bold text-rose-500 hover:text-rose-700 transition">
                             Clear Cart
                         </button>
                     </div>
@@ -148,19 +123,16 @@
                             <span>Subtotal</span>
                             <span id="cart-subtotal">₱0.00</span>
                         </div>
-                        <div
-                            class="flex justify-between text-lg font-extrabold text-slate-900 pt-2 border-t border-slate-100">
+                        <div class="flex justify-between text-lg font-extrabold text-slate-900 pt-2 border-t border-slate-100">
                             <span>Grand Total</span>
                             <span id="cart-total" class="text-brand-600">₱0.00</span>
                         </div>
                     </div>
 
                     <!-- Customer Details Form -->
-                    <form id="order-form" onsubmit="handleSaveOrder(event)"
-                        class="space-y-4 pt-2 border-t border-slate-200">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Customer & Payment
-                            Info</h4>
-
+                    <form id="order-form" onsubmit="handleSaveOrder(event)" class="space-y-4 pt-2 border-t border-slate-200">
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Customer & Payment Info</h4>
+                        
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
@@ -205,8 +177,7 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Pick up / Delivery Time
-                                    *</label>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Pick up / Delivery Time *</label>
                                 <input type="text" id="cust-time" placeholder="e.g. 12:30 PM Today" required
                                     class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition">
                             </div>
@@ -223,15 +194,12 @@
                         </div>
 
                         <div>
-                            <label id="notes-label" class="block text-xs font-bold text-slate-700 mb-1">Notes /
-                                Address</label>
-                            <textarea id="cust-notes" rows="2"
-                                placeholder="Specific notes or complete delivery address..."
+                            <label id="notes-label" class="block text-xs font-bold text-slate-700 mb-1">Notes / Address</label>
+                            <textarea id="cust-notes" rows="2" placeholder="Specific notes or complete delivery address..."
                                 class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"></textarea>
                         </div>
 
-                        <button type="submit"
-                            class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-2xl shadow-lg shadow-brand-600/30 transition transform active:scale-98 flex items-center justify-center gap-2">
+                        <button type="submit" class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-2xl shadow-lg shadow-brand-600/30 transition transform active:scale-98 flex items-center justify-center gap-2">
                             <i class="fa-solid fa-floppy-disk"></i>
                             Save Order
                         </button>
@@ -242,22 +210,18 @@
 
         <!-- TAB 2: ORDERS MANAGER -->
         <section id="manager-tab" class="tab-content hidden space-y-6">
-            <div
-                class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                 <div>
                     <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Active Orders Manager</h2>
-                    <p class="text-slate-500 text-sm mt-1">Manage live order statuses and payments synced in real-time
-                        across devices.</p>
+                    <p class="text-slate-500 text-sm mt-1">Manage live order statuses and payments synced in real-time across devices.</p>
                 </div>
 
                 <div class="flex flex-wrap items-center gap-2">
-                    <button type="button" onclick="triggerManualDailyArchive()"
-                        class="px-4 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
+                    <button type="button" onclick="triggerManualDailyArchive()" class="px-4 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
                         <i class="fa-solid fa-box-archive"></i>
                         <span>Save Today's Orders</span>
                     </button>
-                    <button type="button" onclick="promptRemoveAllOrders()"
-                        class="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
+                    <button type="button" onclick="promptRemoveAllOrders()" class="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
                         <i class="fa-solid fa-trash-can"></i>
                         <span>Clear Live Orders</span>
                     </button>
@@ -266,20 +230,12 @@
 
             <!-- Status Filter Bar -->
             <div class="flex items-center gap-2 overflow-x-auto pb-2" id="filter-bar">
-                <button type="button" onclick="setFilter('All')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white transition">All</button>
-                <button type="button" onclick="setFilter('Preparing')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Preparing</button>
-                <button type="button" onclick="setFilter('For Pick-up')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For
-                    Pick-up</button>
-                <button type="button" onclick="setFilter('For Delivery')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For
-                    Delivery</button>
-                <button type="button" onclick="setFilter('Delivered/Completed')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Delivered/Completed</button>
-                <button type="button" onclick="setFilter('Cancelled')"
-                    class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Cancelled</button>
+                <button type="button" onclick="setFilter('All')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white transition">All</button>
+                <button type="button" onclick="setFilter('Preparing')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Preparing</button>
+                <button type="button" onclick="setFilter('For Pick-up')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For Pick-up</button>
+                <button type="button" onclick="setFilter('For Delivery')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For Delivery</button>
+                <button type="button" onclick="setFilter('Delivered/Completed')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Delivered/Completed</button>
+                <button type="button" onclick="setFilter('Cancelled')" class="filter-btn px-4 py-2 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Cancelled</button>
             </div>
 
             <!-- Orders Grid Feed -->
@@ -290,18 +246,16 @@
 
         <!-- TAB 3: DAILY REPORTS & EXPENSES -->
         <section id="reports-tab" class="tab-content hidden space-y-6">
-            <div
-                class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                 <div>
                     <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Sales & Expense Reports</h2>
-                    <p class="text-slate-500 text-sm mt-1">Review historical order archives, daily costs, and net
-                        income.</p>
+                    <p class="text-slate-500 text-sm mt-1">Review historical order archives, daily costs, and net income.</p>
                 </div>
 
                 <!-- Date Selector for History -->
                 <div class="flex items-center gap-3">
                     <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Date:</label>
-                    <input type="date" id="report-date-picker" onchange="loadSelectedDateReport()"
+                    <input type="date" id="report-date-picker" onchange="loadSelectedDateReport()" 
                         class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-500">
                 </div>
             </div>
@@ -354,14 +308,12 @@
                             <i class="fa-solid fa-receipt text-rose-500"></i>
                             Daily Expense Tracker
                         </h3>
-                        <p class="text-xs text-slate-500">Enter expenses for the selected date to compute Net Income.
-                        </p>
+                        <p class="text-xs text-slate-500">Enter expenses for the selected date to compute Net Income.</p>
 
                         <form id="expense-form" onsubmit="handleAddExpense(event)" class="space-y-3 pt-2">
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Expense Description</label>
-                                <input type="text" id="expense-desc" required
-                                    placeholder="e.g. Fresh Greens & Packaging"
+                                <input type="text" id="expense-desc" required placeholder="e.g. Fresh Greens & Packaging"
                                     class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
                             </div>
                             <div>
@@ -369,15 +321,13 @@
                                 <input type="number" id="expense-amount" step="0.01" min="0" required placeholder="0.00"
                                     class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
                             </div>
-                            <button type="submit"
-                                class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+                            <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
                                 <i class="fa-solid fa-plus"></i> Add Expense Entry
                             </button>
                         </form>
 
                         <div class="border-t border-slate-100 pt-4">
-                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Logged
-                                Expenses List</h4>
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Logged Expenses List</h4>
                             <div id="expenses-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
                                 <!-- Dynamic expense list -->
                             </div>
@@ -403,15 +353,13 @@
     </main>
 
     <!-- Toast Notification -->
-    <div id="toast"
-        class="fixed top-5 right-5 z-50 transform translate-y-[-150%] opacity-0 transition-all duration-300 ease-in-out max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700/50">
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] opacity-0 transition-all duration-300 ease-in-out max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700/50">
         <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
         <span id="toast-message" class="text-sm font-medium">Notification</span>
     </div>
 
     <!-- Modal Dialog -->
-    <div id="modal-container"
-        class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div id="modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
             <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-xl">
                 <i class="fa-solid fa-triangle-exclamation"></i>
@@ -421,10 +369,8 @@
                 <p id="modal-desc" class="text-slate-500 text-sm mt-1">This action cannot be undone.</p>
             </div>
             <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="closeModal()"
-                    class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Cancel</button>
-                <button id="modal-confirm-btn" type="button"
-                    class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-rose-600/30">Confirm</button>
+                <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Cancel</button>
+                <button id="modal-confirm-btn" type="button" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-rose-600/30">Confirm</button>
             </div>
         </div>
     </div>
@@ -434,6 +380,36 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase state declarations
+        let db = null;
+        let auth = null;
+        let isFirebaseAvailable = false;
+        const appId = 'salad-actually-app';
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-1LN3pdxUecpHHPj6jU2oJaxCDp7eTdA",
+            authDomain: "salad-actually-1fc68.firebaseapp.com",
+            projectId: "salad-actually-1fc68",
+            storageBucket: "salad-actually-1fc68.firebasestorage.app",
+            messagingSenderId: "321147308203",
+            appId: "1:321147308203:web:a67766d6ed39dcf9c4cfee",
+            measurementId: "G-JHDRKQD4BC"
+        };
+
+        // Initialize Firebase if config is provided
+        try {
+            if (firebaseConfig.projectId) {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                isFirebaseAvailable = true;
+            }
+        } catch (e) {
+            console.warn("Firebase initialization skipped or failed, falling back to LocalStorage:", e);
+            isFirebaseAvailable = false;
+        }
 
         // Menu Data
         const MENU = [
@@ -457,39 +433,6 @@
         const LOCAL_ORDERS_KEY = 'salad_actually_active_orders';
         const LOCAL_REPORTS_KEY = 'salad_actually_daily_reports';
 
-        // Firebase Initialization
-        const firebaseConfig = {
-            apiKey: "AIzaSyA-1LN3pdxUecpHHPj6jU2oJaxCDp7eTdA",
-            authDomain: "salad-actually-1fc68.firebaseapp.com",
-            projectId: "salad-actually-1fc68",
-            storageBucket: "salad-actually-1fc68.firebasestorage.app",
-            messagingSenderId: "321147308203",
-            appId: "1:321147308203:web:a67766d6ed39dcf9c4cfee",
-            measurementId: "G-JHDRKQD4BC"
-        };
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'salad-actually-default';
-
-        let db = null;
-        let auth = null;
-        let isFirebaseAvailable = false;
-
-        try {
-            const app = initializeApp(firebaseConfig);
-            const analytics = getAnalytics(app);
-            db = getFirestore(app);
-            auth = getAuth(app);
-
-            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                await signInWithCustomToken(auth, __initial_auth_token);
-            } else {
-                await signInAnonymously(auth);
-            }
-            isFirebaseAvailable = true;
-        } catch (e) {
-            console.warn("Using LocalStorage fallback mode:", e);
-            isFirebaseAvailable = false;
-        }
-
         function getFormattedDate(d) {
             const date = new Date(d);
             const year = date.getFullYear();
@@ -502,7 +445,7 @@
         function renderMenu() {
             const grid = document.getElementById('menu-grid');
             if (!grid) return;
-
+            
             grid.innerHTML = MENU.map(item => `
                 <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-brand-300 transition group">
                     <div class="flex items-start justify-between gap-3">
@@ -529,7 +472,7 @@
         }
 
         // Cart Actions
-        window.updateCartQuantity = function (itemId, delta) {
+        window.updateCartQuantity = function(itemId, delta) {
             const currentQty = cart[itemId] || 0;
             const newQty = Math.max(0, currentQty + delta);
             if (newQty === 0) {
@@ -544,7 +487,7 @@
             renderCart();
         };
 
-        window.clearCart = function () {
+        window.clearCart = function() {
             cart = {};
             MENU.forEach(item => {
                 const el = document.getElementById(`menu-qty-${item.id}`);
@@ -596,7 +539,7 @@
         }
 
         // Save Order Handler
-        window.handleSaveOrder = async function (event) {
+        window.handleSaveOrder = async function(event) {
             event.preventDefault();
 
             const itemIds = Object.keys(cart);
@@ -652,7 +595,7 @@
                 onSnapshot(ordersCol, (snapshot) => {
                     activeOrders = [];
                     snapshot.forEach(doc => activeOrders.push(doc.data()));
-                    activeOrders.sort((a, b) => b.timestamp - a.timestamp);
+                    activeOrders.sort((a,b) => b.timestamp - a.timestamp);
                     renderOrdersFeed();
                 }, (err) => {
                     console.error("Firestore active orders error:", err);
@@ -694,7 +637,7 @@
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', order.id);
                     await setDoc(docRef, order);
                     return;
-                } catch (e) {
+                } catch(e) {
                     console.error("Firebase save failed:", e);
                 }
             }
@@ -703,14 +646,14 @@
             renderOrdersFeed();
         }
 
-        window.updateOrderStatus = async function (orderId, newStatus) {
+        window.updateOrderStatus = async function(orderId, newStatus) {
             if (isFirebaseAvailable && db) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
                     await updateDoc(docRef, { status: newStatus });
                     showToast(`Status updated to ${newStatus}`, "info");
                     return;
-                } catch (e) {
+                } catch(e) {
                     console.error("Status update failed:", e);
                 }
             }
@@ -723,14 +666,14 @@
             }
         };
 
-        window.togglePaymentStatus = async function (orderId, newPaymentStatus) {
+        window.togglePaymentStatus = async function(orderId, newPaymentStatus) {
             if (isFirebaseAvailable && db) {
                 try {
                     const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
                     await updateDoc(docRef, { paymentStatus: newPaymentStatus });
                     showToast(`Payment marked as ${newPaymentStatus}`, "info");
                     return;
-                } catch (e) {
+                } catch(e) {
                     console.error("Payment status update failed:", e);
                 }
             }
@@ -744,7 +687,7 @@
         };
 
         // Filter Controls
-        window.setFilter = function (filter) {
+        window.setFilter = function(filter) {
             currentFilter = filter;
             document.querySelectorAll('.filter-btn').forEach(btn => {
                 const text = btn.innerText.trim();
@@ -866,7 +809,7 @@
         }
 
         // Remove All Live Orders
-        window.promptRemoveAllOrders = function () {
+        window.promptRemoveAllOrders = function() {
             showModal(
                 "Clear Live Orders?",
                 "Are you sure you want to clear all current active orders? This will remove them from the manager board.",
@@ -886,7 +829,7 @@
         };
 
         // Manual & Daily Automated Midnight Archiving
-        window.triggerManualDailyArchive = async function () {
+        window.triggerManualDailyArchive = async function() {
             const today = getFormattedDate(new Date());
             await archiveDayOrders(today);
             showToast("Today's orders saved and archived successfully!", "success");
@@ -914,7 +857,7 @@
                     for (let order of activeOrders) {
                         await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', order.id));
                     }
-                } catch (e) {
+                } catch(e) {
                     console.error("Archive error:", e);
                 }
             } else {
@@ -946,7 +889,7 @@
         }
 
         // Reports & Expenses Logic
-        window.loadSelectedDateReport = function () {
+        window.loadSelectedDateReport = function() {
             const picker = document.getElementById('report-date-picker');
             selectedDate = picker ? picker.value : getFormattedDate(new Date());
 
@@ -1030,7 +973,7 @@
             `).join('');
         }
 
-        window.handleAddExpense = async function (event) {
+        window.handleAddExpense = async function(event) {
             event.preventDefault();
             const desc = document.getElementById('expense-desc').value.trim();
             const amount = parseFloat(document.getElementById('expense-amount').value);
@@ -1053,7 +996,7 @@
             if (isFirebaseAvailable && db) {
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
-                } catch (e) {
+                } catch(e) {
                     console.error("Expense save error:", e);
                 }
             } else {
@@ -1066,7 +1009,7 @@
             showToast("Expense logged successfully!", "success");
         };
 
-        window.deleteExpenseEntry = async function (index) {
+        window.deleteExpenseEntry = async function(index) {
             const currentReport = archivedReports[selectedDate];
             if (!currentReport || !currentReport.expenses) return;
 
@@ -1075,7 +1018,7 @@
             if (isFirebaseAvailable && db) {
                 try {
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
-                } catch (e) {
+                } catch(e) {
                     console.error("Expense delete error:", e);
                 }
             } else {
@@ -1088,7 +1031,7 @@
         };
 
         // Navigation Tabs
-        window.switchTab = function (tabId) {
+        window.switchTab = function(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
             document.getElementById(tabId).classList.remove('hidden');
 
@@ -1121,7 +1064,7 @@
             const toastIcon = document.getElementById('toast-icon');
 
             toastMessage.innerText = message;
-
+            
             if (type === 'error') {
                 toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-xl";
             } else if (type === 'info') {
@@ -1148,7 +1091,7 @@
             document.getElementById('modal-container').classList.remove('hidden');
         }
 
-        window.closeModal = function () {
+        window.closeModal = function() {
             document.getElementById('modal-container').classList.add('hidden');
             pendingModalAction = null;
         };
@@ -1168,5 +1111,4 @@
         setInterval(checkAndRunMidnightReset, 30000);
     </script>
 </body>
-
 </html>
