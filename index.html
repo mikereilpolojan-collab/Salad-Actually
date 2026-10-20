@@ -9,7 +9,9 @@
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- html2canvas for taking receipt image screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -38,6 +40,13 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Printable thermal receipt formatting */
+        @media print {
+            body * { visibility: hidden !important; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible !important; }
+            #receipt-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 10px !important; }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
@@ -47,9 +56,10 @@
             <div class="flex justify-between items-center h-20">
                 <!-- Logo & Brand -->
                 <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-600/30">
-                        <i class="fa-solid fa-leaf"></i>
-                    </div>
+                    <a href="#" class="w-12 h-12 bg-brand-600 rounded-2xl flex items-center justify-center text-white text-2xl shadow-lg shadow-brand-600/30 overflow-hidden shrink-0">
+                        <!-- Replace src with your image URL as needed -->
+                        <img src="Logo.png" alt="Salad, Actually Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-leaf\'></i>';">
+                    </a>
                     <div>
                         <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 leading-tight">
                             Salad, <span class="text-brand-600">Actually</span>
@@ -455,63 +465,80 @@
         </div>
     </div>
 
-    <!-- Edit Order Modal -->
-    <div id="edit-modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8 max-h-[90vh] flex flex-col">
+    <!-- Hidden Receipt Container for Printing & Screenshot Capture -->
+    <div id="receipt-modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8 flex flex-col">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
-                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
-                    <i class="fa-solid fa-pen-to-square text-brand-600"></i>
-                    Modify Order
+                <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-brand-600"></i>
+                    Order Receipt
                 </h3>
-                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition">
+                <button type="button" onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-600 transition">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
 
-            <form id="edit-order-form" onsubmit="handleSaveEditedOrder(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
-                <input type="hidden" id="edit-order-id">
-                
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
-                    <input type="text" id="edit-cust-name" required
-                        class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+            <!-- Styled Thermal Receipt Area -->
+            <div id="receipt-print-area" class="bg-white text-slate-900 font-mono text-xs p-5 rounded-2xl border border-slate-200 shadow-inner space-y-4">
+                <div class="text-center space-y-1">
+                    <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white text-xl mx-auto mb-2">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <h2 class="font-extrabold text-base uppercase tracking-wider text-slate-900">Salad, Actually</h2>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-sans">Fresh & Healthy Eats</p>
+                    <div class="border-b border-dashed border-slate-300 my-2"></div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method *</label>
-                        <select id="edit-payment-method" required
-                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
-                            <option value="GCASH">GCASH Payment</option>
-                            <option value="Cash On Delivery">Cash On Delivery</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Transportation Fee (₱)</label>
-                        <input type="number" id="edit-transport-fee" min="0" step="1" oninput="recalculateEditTotal()"
-                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-bold">
-                    </div>
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Order ID:</span> <span id="rec-id" class="font-extrabold font-mono">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Date:</span> <span id="rec-date" class="font-semibold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Customer:</span> <span id="rec-name" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Contact:</span> <span id="rec-phone" class="font-semibold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Order Type:</span> <span id="rec-type" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Payment:</span> <span id="rec-payment" class="font-extrabold">--</span></div>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 mb-2">Menu Selection</label>
-                    <div id="edit-menu-items" class="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
-                        <!-- Items rendered dynamically -->
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <!-- Items Breakdown -->
+                <div class="space-y-1.5 font-sans">
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Ordered Items</p>
+                    <div id="rec-items-list" class="space-y-1 text-[11px]">
+                        <!-- Rendered items -->
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center p-3 bg-brand-50 border border-brand-100 rounded-xl">
-                    <span class="text-xs font-bold text-brand-900">Updated Total:</span>
-                    <span id="edit-total-preview" class="text-base font-black text-brand-700">₱0.00</span>
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <!-- Totals -->
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Subtotal:</span> <span id="rec-subtotal" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Transport Fee:</span> <span id="rec-trans" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between text-sm font-black pt-1 border-t border-slate-200">
+                        <span>TOTAL:</span>
+                        <span id="rec-total" class="text-emerald-700">₱0.00</span>
+                    </div>
                 </div>
 
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Cancel</button>
-                    <button type="submit" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center gap-2">
-                        <i class="fa-solid fa-check"></i> Save Changes
-                    </button>
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <div class="text-center font-sans space-y-1">
+                    <p class="text-[10px] text-slate-500 italic">Thank you for ordering with us!</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Salad, Actually ©</p>
                 </div>
-            </form>
+            </div>
+
+            <!-- Receipt Actions -->
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button type="button" onclick="triggerPrintReceipt()" class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Receipt</span>
+                </button>
+                <button type="button" onclick="captureReceiptScreenshot()" class="py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Download Image</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -569,6 +596,7 @@
         let currentFilter = 'All';
         let selectedDate = getFormattedDate(new Date());
         let editingCart = {}; // Temp cart for edit order modal
+        let currentReceiptOrder = null;
 
         // Local Storage Keys
         const LOCAL_ORDERS_KEY = 'salad_actually_active_orders';
@@ -849,6 +877,88 @@
             document.getElementById('edit-total-preview').innerText = `₱${total.toFixed(2)}`;
         };
 
+        // Receipt Printing & Image Capture Modal
+        window.openReceiptModal = function(orderId, source = 'active') {
+            let order = null;
+
+            if (source === 'active') {
+                order = activeOrders.find(o => o.id === orderId);
+            } else {
+                const report = archivedReports[selectedDate];
+                if (report && report.orders) {
+                    order = report.orders.find(o => o.id === orderId || o.customerName === orderId);
+                }
+            }
+
+            if (!order) {
+                showToast("Order not found for receipt preview.", "error");
+                return;
+            }
+
+            currentReceiptOrder = order;
+
+            document.getElementById('rec-id').innerText = order.id || 'N/A';
+            document.getElementById('rec-date').innerText = order.dateCreated || getFormattedDate(new Date());
+            document.getElementById('rec-name').innerText = order.customerName || 'N/A';
+            document.getElementById('rec-phone').innerText = order.contactNumber || 'N/A';
+            document.getElementById('rec-type').innerText = order.orderType || 'Pick-up';
+            document.getElementById('rec-payment').innerText = `${order.paymentMethod || 'GCASH'}`;
+
+            let itemsSubtotal = 0;
+            const itemsListEl = document.getElementById('rec-items-list');
+            itemsListEl.innerHTML = (order.items || []).map(item => {
+                const itemTotal = item.price * item.quantity;
+                itemsSubtotal += itemTotal;
+                return `
+                    <div class="flex justify-between text-slate-700">
+                        <span>${item.quantity}x ${item.name}</span>
+                        <span class="font-bold">₱${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const transFee = order.transportationFee || 0;
+            const grandTotal = order.totalPrice || (itemsSubtotal + transFee);
+
+            document.getElementById('rec-subtotal').innerText = `₱${itemsSubtotal.toFixed(2)}`;
+            document.getElementById('rec-trans').innerText = `₱${transFee.toFixed(2)}`;
+            document.getElementById('rec-total').innerText = `₱${grandTotal.toFixed(2)}`;
+
+            document.getElementById('receipt-modal-container').classList.remove('hidden');
+        };
+
+        window.closeReceiptModal = function() {
+            document.getElementById('receipt-modal-container').classList.add('hidden');
+            currentReceiptOrder = null;
+        };
+
+        window.triggerPrintReceipt = function() {
+            window.print();
+        };
+
+        window.captureReceiptScreenshot = function() {
+            const receiptArea = document.getElementById('receipt-print-area');
+            if (!receiptArea) return;
+
+            showToast("Generating receipt image...", "info");
+
+            html2canvas(receiptArea, {
+                scale: 3, // High quality screenshot
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const image = canvas.toDataURL("image/jpg");
+                const link = document.createElement('a');
+                const orderId = currentReceiptOrder ? (currentReceiptOrder.id || 'receipt') : 'receipt';
+                link.download = `Receipt_${orderId}.jpg`;
+                link.href = image;
+                link.click();
+                showToast("Receipt image downloaded!", "success");
+            }).catch(err => {
+                console.error("Screenshot error:", err);
+                showToast("Failed to generate image.", "error");
+            });
+        };
+
         window.handleSaveEditedOrder = async function(event) {
             event.preventDefault();
             const orderId = document.getElementById('edit-order-id').value;
@@ -1079,12 +1189,17 @@
                 return `
                     <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-300 transition">
                         <div class="space-y-3">
-                            <!-- Card Header: Time, Edit & Delete buttons -->
+                            <!-- Card Header: Time, Receipt, Edit & Delete buttons -->
                             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                                 <div>
                                     <span class="text-xs text-slate-400 font-bold"><i class="fa-regular fa-clock mr-1"></i>${order.pickupDeliveryTime}</span>
                                 </div>
                                 <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="openReceiptModal('${order.id}', 'active')" title="Print or Screenshot Receipt"
+                                        class="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition text-xs font-bold flex items-center gap-1 px-2">
+                                        <i class="fa-solid fa-receipt"></i>
+                                        <span>Receipt</span>
+                                    </button>
                                     <button type="button" onclick="openEditModal('${order.id}')" title="Modify Order"
                                         class="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition text-xs">
                                         <i class="fa-solid fa-pen"></i>
@@ -1371,7 +1486,9 @@
                 return;
             }
 
-            container.innerHTML = orders.map((order, index) => `
+            container.innerHTML = orders.map((order, index) => {
+                const targetKey = order.id || order.customerName;
+                return `
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
                     <div class="flex justify-between items-center font-bold">
                         <span class="text-brand-700 font-extrabold text-sm">${order.customerName} (${order.orderType || 'Pick-up'})</span>
@@ -1382,6 +1499,10 @@
                             <span class="px-2 py-0.5 rounded-full text-[10px] ${order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
                                 ${order.status}
                             </span>
+                            <button type="button" onclick="openReceiptModal('${targetKey}', 'archive')" title="Print or Screenshot Receipt"
+                                class="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition text-xs flex items-center gap-1 font-extrabold">
+                                <i class="fa-solid fa-receipt"></i>
+                            </button>
                             <button type="button" onclick="promptDeleteArchivedOrder(${index})" title="Delete Archived Order"
                                 class="p-1 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 transition text-xs">
                                 <i class="fa-solid fa-trash-can"></i>
@@ -1397,7 +1518,7 @@
                         <span>₱${(order.totalPrice || 0).toFixed(2)}</span>
                     </div>
                 </div>
-            `).join('');
+            `}).join('');
         }
 
         // Delete Archived Order Functionality
