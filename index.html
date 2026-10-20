@@ -42,7 +42,6 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
-    <!-- Header Navigation -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between items-center h-20">
@@ -79,7 +78,6 @@
         </div>
     </header>
 
-    <!-- Main Content Area -->
     <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
 
         <!-- TAB 1: ORDER FORM -->
@@ -123,6 +121,11 @@
                             <span>Subtotal</span>
                             <span id="cart-subtotal">₱0.00</span>
                         </div>
+                        <div class="flex items-center justify-between text-sm text-slate-600 font-medium gap-2 pt-1">
+                            <label for="transport-fee" class="text-xs font-bold text-slate-700 shrink-0">Transportation Fee (₱)</label>
+                            <input type="number" id="transport-fee" min="0" step="1" value="0" oninput="updateCartTotals()"
+                                class="w-24 px-2 py-1 text-right text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold">
+                        </div>
                         <div class="flex justify-between text-lg font-extrabold text-slate-900 pt-2 border-t border-slate-100">
                             <span>Grand Total</span>
                             <span id="cart-total" class="text-brand-600">₱0.00</span>
@@ -140,8 +143,8 @@
                                     class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-xs font-bold text-slate-700 mb-1">Contact Number *</label>
-                                <input type="tel" id="cust-phone" required placeholder="09XX XXX XXXX"
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Contact Number</label>
+                                <input type="tel" id="cust-phone" placeholder="09XX XXX XXXX"
                                     class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                         </div>
@@ -194,8 +197,8 @@
                         </div>
 
                         <div>
-                            <label id="notes-label" class="block text-xs font-bold text-slate-700 mb-1">Notes / Address</label>
-                            <textarea id="cust-notes" rows="2" placeholder="Specific notes or complete delivery address..."
+                            <label id="notes-label" class="block text-xs font-bold text-slate-700 mb-1">Notes / Address *</label>
+                            <textarea id="cust-notes" rows="2" required placeholder="Specific notes or complete delivery address..."
                                 class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"></textarea>
                         </div>
 
@@ -260,8 +263,7 @@
                 </div>
             </div>
 
-            <!-- Overview Stat Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
                     <div class="flex items-center justify-between text-slate-400">
                         <span class="text-xs font-extrabold uppercase tracking-wider">Gross Sales</span>
@@ -291,11 +293,89 @@
 
                 <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
                     <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Tithes (10%)</span>
+                        <i class="fa-solid fa-hand-holding-heart text-amber-500 text-lg"></i>
+                    </div>
+                    <div id="stat-tithes" class="text-2xl font-black text-amber-600">₱0.00</div>
+                    <p class="text-xs text-slate-400 font-medium">10% of Net Income</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
                         <span class="text-xs font-extrabold uppercase tracking-wider">Total Orders</span>
                         <i class="fa-solid fa-box text-blue-500 text-lg"></i>
                     </div>
                     <div id="stat-orders-count" class="text-2xl font-black text-slate-900">0</div>
                     <p class="text-xs text-slate-400 font-medium">Archived orders</p>
+                </div>
+            </div>
+
+            <!-- Weekly and Monthly Summaries -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-brand-600"></i>
+                    Weekly & Monthly Overview
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Weekly Summary Box -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Week Summary</span>
+                            <span id="weekly-range-label" class="text-[11px] font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 pt-1 text-center">
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="weekly-gross" class="text-xs font-black text-slate-900">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="weekly-expenses" class="text-xs font-black text-rose-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Net</p>
+                                <p id="weekly-net" class="text-xs font-black text-brand-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-amber-500">Tithes</p>
+                                <p id="weekly-tithes" class="text-xs font-black text-amber-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="weekly-orders" class="text-xs font-black text-slate-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Box -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Month Summary</span>
+                            <span id="monthly-range-label" class="text-[11px] font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 pt-1 text-center">
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="monthly-gross" class="text-xs font-black text-slate-900">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="monthly-expenses" class="text-xs font-black text-rose-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Net</p>
+                                <p id="monthly-net" class="text-xs font-black text-brand-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-amber-500">Tithes</p>
+                                <p id="monthly-tithes" class="text-xs font-black text-amber-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="monthly-orders" class="text-xs font-black text-slate-900">0</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -375,10 +455,70 @@
         </div>
     </div>
 
+    <!-- Edit Order Modal -->
+    <div id="edit-modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8 max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-600"></i>
+                    Modify Order
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="edit-order-form" onsubmit="handleSaveEditedOrder(event)" class="space-y-4 overflow-y-auto pr-1 flex-1">
+                <input type="hidden" id="edit-order-id">
+                
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
+                    <input type="text" id="edit-cust-name" required
+                        class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method *</label>
+                        <select id="edit-payment-method" required
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                            <option value="GCASH">GCASH Payment</option>
+                            <option value="Cash On Delivery">Cash On Delivery</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Transportation Fee (₱)</label>
+                        <input type="number" id="edit-transport-fee" min="0" step="1" oninput="recalculateEditTotal()"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-bold">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-2">Menu Selection</label>
+                    <div id="edit-menu-items" class="space-y-2 bg-slate-50 p-3 rounded-2xl border border-slate-200 max-h-48 overflow-y-auto">
+                        <!-- Items rendered dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center p-3 bg-brand-50 border border-brand-100 rounded-xl">
+                    <span class="text-xs font-bold text-brand-900">Updated Total:</span>
+                    <span id="edit-total-preview" class="text-base font-black text-brand-700">₱0.00</span>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-brand-600/30 flex items-center gap-2">
+                        <i class="fa-solid fa-check"></i> Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Application JavaScript Logic & Firebase SDK Setup -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // Global Firebase state declarations
@@ -428,6 +568,7 @@
         let archivedReports = {};
         let currentFilter = 'All';
         let selectedDate = getFormattedDate(new Date());
+        let editingCart = {}; // Temp cart for edit order modal
 
         // Local Storage Keys
         const LOCAL_ORDERS_KEY = 'salad_actually_active_orders';
@@ -440,6 +581,37 @@
             const day = String(date.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
+
+        // Navigation Tabs attached to window scope
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-brand-700', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            const activeBtnMap = {
+                'order-tab': 'nav-order-btn',
+                'manager-tab': 'nav-manager-btn',
+                'reports-tab': 'nav-reports-btn'
+            };
+
+            const activeBtn = document.getElementById(activeBtnMap[tabId]);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white', 'text-brand-700', 'shadow-sm');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            if (tabId === 'reports-tab') {
+                window.loadSelectedDateReport();
+            }
+        };
+
+        window.updateCartTotals = function() {
+            renderCart();
+        };
 
         // Render Menu Cards
         function renderMenu() {
@@ -493,6 +665,8 @@
                 const el = document.getElementById(`menu-qty-${item.id}`);
                 if (el) el.innerText = "0";
             });
+            const transFeeInput = document.getElementById('transport-fee');
+            if (transFeeInput) transFeeInput.value = 0;
             renderCart();
         };
 
@@ -500,6 +674,8 @@
             const cartList = document.getElementById('cart-list');
             const subtotalEl = document.getElementById('cart-subtotal');
             const totalEl = document.getElementById('cart-total');
+            const transFeeInput = document.getElementById('transport-fee');
+            const transportFee = transFeeInput ? parseFloat(transFeeInput.value) || 0 : 0;
 
             const itemIds = Object.keys(cart);
             if (itemIds.length === 0) {
@@ -510,7 +686,7 @@
                     </div>
                 `;
                 subtotalEl.innerText = "₱0.00";
-                totalEl.innerText = "₱0.00";
+                totalEl.innerText = `₱${transportFee.toFixed(2)}`;
                 return;
             }
 
@@ -534,8 +710,9 @@
                 `;
             }).join('');
 
+            const grandTotal = subtotal + transportFee;
             subtotalEl.innerText = `₱${subtotal.toFixed(2)}`;
-            totalEl.innerText = `₱${subtotal.toFixed(2)}`;
+            totalEl.innerText = `₱${grandTotal.toFixed(2)}`;
         }
 
         // Save Order Handler
@@ -556,14 +733,17 @@
             const time = document.getElementById('cust-time').value.trim();
             const status = document.getElementById('cust-status').value;
             const notes = document.getElementById('cust-notes').value.trim();
+            const transportFee = parseFloat(document.getElementById('transport-fee').value) || 0;
 
-            let total = 0;
+            let itemsSubtotal = 0;
             const orderItems = itemIds.map(id => {
                 const item = MENU.find(m => m.id == id);
                 const qty = cart[id];
-                total += item.price * qty;
+                itemsSubtotal += item.price * qty;
                 return { id: item.id, name: item.name, price: item.price, quantity: qty };
             });
+
+            const totalPrice = itemsSubtotal + transportFee;
 
             const newOrder = {
                 id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
@@ -575,8 +755,9 @@
                 pickupDeliveryTime: time,
                 status: status,
                 notesAddress: notes,
+                transportationFee: transportFee,
                 items: orderItems,
-                totalPrice: total,
+                totalPrice: totalPrice,
                 dateCreated: getFormattedDate(new Date()),
                 timestamp: Date.now()
             };
@@ -586,6 +767,142 @@
             showToast("Order saved successfully!", "success");
             clearCart();
             document.getElementById('order-form').reset();
+        };
+
+        window.openEditModal = function(orderId) {
+            const order = activeOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('edit-order-id').value = order.id;
+            document.getElementById('edit-cust-name').value = order.customerName || '';
+            document.getElementById('edit-payment-method').value = order.paymentMethod || 'GCASH';
+            document.getElementById('edit-transport-fee').value = order.transportationFee || 0;
+
+            // Reconstruct temporary editing cart
+            editingCart = {};
+            (order.items || []).forEach(item => {
+                editingCart[item.id] = item.quantity;
+            });
+
+            renderEditMenu();
+            recalculateEditTotal();
+
+            document.getElementById('edit-modal-container').classList.remove('hidden');
+        };
+
+        window.closeEditModal = function() {
+            document.getElementById('edit-modal-container').classList.add('hidden');
+            editingCart = {};
+        };
+
+        function renderEditMenu() {
+            const container = document.getElementById('edit-menu-items');
+            if (!container) return;
+
+            container.innerHTML = MENU.map(item => {
+                const qty = editingCart[item.id] || 0;
+                return `
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100 text-xs">
+                        <div class="font-bold text-slate-800">
+                            ${item.name}
+                            <span class="text-slate-400 font-normal ml-1">(₱${item.price.toFixed(2)})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="updateEditCartQty(${item.id}, -1)" class="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">
+                                -
+                            </button>
+                            <span id="edit-qty-${item.id}" class="font-extrabold w-4 text-center">${qty}</span>
+                            <button type="button" onclick="updateEditCartQty(${item.id}, 1)" class="w-6 h-6 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.updateEditCartQty = function(itemId, delta) {
+            const current = editingCart[itemId] || 0;
+            const updated = Math.max(0, current + delta);
+            if (updated === 0) {
+                delete editingCart[itemId];
+            } else {
+                editingCart[itemId] = updated;
+            }
+
+            const qtyEl = document.getElementById(`edit-qty-${itemId}`);
+            if (qtyEl) qtyEl.innerText = updated;
+
+            recalculateEditTotal();
+        };
+
+        window.recalculateEditTotal = function() {
+            let subtotal = 0;
+            Object.keys(editingCart).forEach(id => {
+                const item = MENU.find(m => m.id == id);
+                if (item) subtotal += item.price * editingCart[id];
+            });
+
+            const transFee = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+            const total = subtotal + transFee;
+
+            document.getElementById('edit-total-preview').innerText = `₱${total.toFixed(2)}`;
+        };
+
+        window.handleSaveEditedOrder = async function(event) {
+            event.preventDefault();
+            const orderId = document.getElementById('edit-order-id').value;
+            const name = document.getElementById('edit-cust-name').value.trim();
+            const paymentMethod = document.getElementById('edit-payment-method').value;
+            const transportFee = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+
+            const itemIds = Object.keys(editingCart);
+            if (itemIds.length === 0) {
+                showToast("Order must contain at least one item.", "error");
+                return;
+            }
+
+            let itemsSubtotal = 0;
+            const updatedItems = itemIds.map(id => {
+                const item = MENU.find(m => m.id == id);
+                const qty = editingCart[id];
+                itemsSubtotal += item.price * qty;
+                return { id: item.id, name: item.name, price: item.price, quantity: qty };
+            });
+
+            const totalPrice = itemsSubtotal + transportFee;
+
+            if (isFirebaseAvailable && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
+                    await updateDoc(docRef, {
+                        customerName: name,
+                        paymentMethod: paymentMethod,
+                        transportationFee: transportFee,
+                        items: updatedItems,
+                        totalPrice: totalPrice
+                    });
+                    closeEditModal();
+                    showToast("Order modified successfully!", "success");
+                    return;
+                } catch (e) {
+                    console.error("Failed to edit order:", e);
+                }
+            }
+
+            const order = activeOrders.find(o => o.id === orderId);
+            if (order) {
+                order.customerName = name;
+                order.paymentMethod = paymentMethod;
+                order.transportationFee = transportFee;
+                order.items = updatedItems;
+                order.totalPrice = totalPrice;
+
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                renderOrdersFeed();
+                closeEditModal();
+                showToast("Order modified successfully!", "success");
+            }
         };
 
         // Firebase Sync & Local Storage Management
@@ -608,7 +925,7 @@
                     snapshot.forEach(doc => {
                         archivedReports[doc.id] = doc.data();
                     });
-                    loadSelectedDateReport();
+                    window.loadSelectedDateReport();
                 }, (err) => {
                     console.error("Firestore reports error:", err);
                     loadLocalReports();
@@ -628,7 +945,7 @@
         function loadLocalReports() {
             const raw = localStorage.getItem(LOCAL_REPORTS_KEY);
             archivedReports = raw ? JSON.parse(raw) : {};
-            loadSelectedDateReport();
+            window.loadSelectedDateReport();
         }
 
         async function saveOrderToStorage(order) {
@@ -686,6 +1003,28 @@
             }
         };
 
+        // Delete Single Active Order
+        window.promptDeleteSingleActiveOrder = function(orderId) {
+            showModal(
+                "Delete Order?",
+                "Are you sure you want to remove this order from the live board?",
+                async () => {
+                    if (isFirebaseAvailable && db) {
+                        try {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId));
+                        } catch (e) {
+                            console.error("Failed to delete order from Firebase:", e);
+                        }
+                    } else {
+                        activeOrders = activeOrders.filter(o => o.id !== orderId);
+                        localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                        renderOrdersFeed();
+                    }
+                    showToast("Order removed from board.", "info");
+                }
+            );
+        };
+
         // Filter Controls
         window.setFilter = function(filter) {
             currentFilter = filter;
@@ -735,22 +1074,33 @@
 
                 const isPickup = (order.orderType || 'Pick-up') === 'Pick-up';
                 const isPaid = order.paymentStatus === 'Paid';
+                const transFee = order.transportationFee || 0;
 
                 return `
                     <div class="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between space-y-4 hover:border-slate-300 transition">
                         <div class="space-y-3">
+                            <!-- Card Header: Time, Edit & Delete buttons -->
                             <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                                 <div>
-                                    <span class="text-xs font-black text-brand-700">${order.id}</span>
+                                    <span class="text-xs text-slate-400 font-bold"><i class="fa-regular fa-clock mr-1"></i>${order.pickupDeliveryTime}</span>
                                 </div>
-                                <span class="text-xs text-slate-400 font-bold"><i class="fa-regular fa-clock mr-1"></i>${order.pickupDeliveryTime}</span>
+                                <div class="flex items-center gap-1.5">
+                                    <button type="button" onclick="openEditModal('${order.id}')" title="Modify Order"
+                                        class="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition text-xs">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button type="button" onclick="promptDeleteSingleActiveOrder('${order.id}')" title="Delete Order"
+                                        class="p-1.5 rounded-lg bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition text-xs">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <!-- Customer Name & Order Type Badge -->
                             <div class="flex items-start justify-between gap-2">
                                 <div>
                                     <h3 class="font-extrabold text-slate-900 text-lg">${order.customerName}</h3>
-                                    <p class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-phone text-slate-400 mr-1"></i>${order.contactNumber}</p>
+                                    ${order.contactNumber ? `<p class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-phone text-slate-400 mr-1"></i>${order.contactNumber}</p>` : ''}
                                 </div>
                                 <span class="px-2.5 py-1 rounded-xl text-xs font-extrabold border ${isPickup ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-purple-50 text-purple-700 border-purple-200'}">
                                     <i class="fa-solid ${isPickup ? 'fa-bag-shopping' : 'fa-truck'} mr-1"></i>${order.orderType || 'Pick-up'}
@@ -785,6 +1135,12 @@
                                         <span class="text-slate-900 font-bold">₱${(item.price * item.quantity).toFixed(2)}</span>
                                     </div>
                                 `).join('')}
+                                ${transFee > 0 ? `
+                                    <div class="flex justify-between text-xs font-semibold text-brand-700 pt-1 border-t border-slate-100">
+                                        <span>Transportation Fee</span>
+                                        <span class="font-bold">₱${transFee.toFixed(2)}</span>
+                                    </div>
+                                ` : ''}
                             </div>
                         </div>
 
@@ -888,7 +1244,6 @@
             }
         }
 
-        // Reports & Expenses Logic
         window.loadSelectedDateReport = function() {
             const picker = document.getElementById('report-date-picker');
             selectedDate = picker ? picker.value : getFormattedDate(new Date());
@@ -901,15 +1256,82 @@
 
             const totalExpenses = (report.expenses || []).reduce((acc, exp) => acc + (parseFloat(exp.amount) || 0), 0);
             const netProfit = gross - totalExpenses;
+            const tithes = Math.max(0, netProfit * 0.10);
 
             document.getElementById('stat-gross').innerText = `₱${gross.toFixed(2)}`;
             document.getElementById('stat-expenses').innerText = `₱${totalExpenses.toFixed(2)}`;
             document.getElementById('stat-net').innerText = `₱${netProfit.toFixed(2)}`;
+            document.getElementById('stat-tithes').innerText = `₱${tithes.toFixed(2)}`;
             document.getElementById('stat-orders-count').innerText = report.orders.length;
 
+            computeWeeklyAndMonthlyReports(selectedDate);
             renderExpensesList(report.expenses || []);
             renderArchivedOrdersList(report.orders || []);
         };
+
+        function computeWeeklyAndMonthlyReports(targetDateStr) {
+            const current = new Date(targetDateStr + 'T00:00:00');
+            
+            // Calculate Start and End of the Week (Sunday to Saturday)
+            const dayOfWeek = current.getDay();
+            const startOfWeek = new Date(current);
+            startOfWeek.setDate(current.getDate() - dayOfWeek);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            // Calculate Start and End of the Month
+            const year = current.getFullYear();
+            const month = current.getMonth();
+            const startOfMonth = new Date(year, month, 1);
+            const endOfMonth = new Date(year, month + 1, 0);
+
+            let wGross = 0, wExpenses = 0, wOrdersCount = 0;
+            let mGross = 0, mExpenses = 0, mOrdersCount = 0;
+
+            Object.keys(archivedReports).forEach(dateKey => {
+                const rDate = new Date(dateKey + 'T00:00:00');
+                const rep = archivedReports[dateKey];
+                if (!rep) return;
+
+                const dayOrders = rep.orders || [];
+                const dayGross = dayOrders.reduce((sum, o) => o.status !== 'Cancelled' ? sum + (o.totalPrice || 0) : sum, 0);
+                const dayExp = (rep.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+                // Weekly check
+                if (rDate >= startOfWeek && rDate <= endOfWeek) {
+                    wGross += dayGross;
+                    wExpenses += dayExp;
+                    wOrdersCount += dayOrders.length;
+                }
+
+                // Monthly check
+                if (rDate >= startOfMonth && rDate <= endOfMonth) {
+                    mGross += dayGross;
+                    mExpenses += dayExp;
+                    mOrdersCount += dayOrders.length;
+                }
+            });
+
+            const wNet = wGross - wExpenses;
+            const wTithes = Math.max(0, wNet * 0.10);
+
+            const mNet = mGross - mExpenses;
+            const mTithes = Math.max(0, mNet * 0.10);
+
+            document.getElementById('weekly-range-label').innerText = `${getFormattedDate(startOfWeek)} to ${getFormattedDate(endOfWeek)}`;
+            document.getElementById('weekly-gross').innerText = `₱${wGross.toFixed(2)}`;
+            document.getElementById('weekly-expenses').innerText = `₱${wExpenses.toFixed(2)}`;
+            document.getElementById('weekly-net').innerText = `₱${wNet.toFixed(2)}`;
+            document.getElementById('weekly-tithes').innerText = `₱${wTithes.toFixed(2)}`;
+            document.getElementById('weekly-orders').innerText = wOrdersCount;
+
+            document.getElementById('monthly-range-label').innerText = current.toLocaleString('default', { month: 'long', year: 'numeric' });
+            document.getElementById('monthly-gross').innerText = `₱${mGross.toFixed(2)}`;
+            document.getElementById('monthly-expenses').innerText = `₱${mExpenses.toFixed(2)}`;
+            document.getElementById('monthly-net').innerText = `₱${mNet.toFixed(2)}`;
+            document.getElementById('monthly-tithes').innerText = `₱${mTithes.toFixed(2)}`;
+            document.getElementById('monthly-orders').innerText = mOrdersCount;
+        }
 
         function renderExpensesList(expenses) {
             const container = document.getElementById('expenses-list');
@@ -949,10 +1371,10 @@
                 return;
             }
 
-            container.innerHTML = orders.map(order => `
+            container.innerHTML = orders.map((order, index) => `
                 <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
                     <div class="flex justify-between items-center font-bold">
-                        <span class="text-brand-700">${order.id} - ${order.customerName} (${order.orderType || 'Pick-up'})</span>
+                        <span class="text-brand-700 font-extrabold text-sm">${order.customerName} (${order.orderType || 'Pick-up'})</span>
                         <div class="flex items-center gap-2">
                             <span class="px-2 py-0.5 rounded-full text-[10px] ${order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
                                 ${order.paymentStatus || 'Unpaid'}
@@ -960,10 +1382,15 @@
                             <span class="px-2 py-0.5 rounded-full text-[10px] ${order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
                                 ${order.status}
                             </span>
+                            <button type="button" onclick="promptDeleteArchivedOrder(${index})" title="Delete Archived Order"
+                                class="p-1 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 transition text-xs">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="text-slate-500">
                         ${order.items.map(i => `${i.quantity}x ${i.name}`).join(', ')}
+                        ${order.transportationFee ? `<span class="block text-slate-400 text-[11px] mt-0.5">Trans Fee: ₱${order.transportationFee.toFixed(2)}</span>` : ''}
                     </div>
                     <div class="flex justify-between items-center pt-1 border-t border-slate-200/60 font-black text-slate-900">
                         <span>Total:</span>
@@ -972,6 +1399,34 @@
                 </div>
             `).join('');
         }
+
+        // Delete Archived Order Functionality
+        window.promptDeleteArchivedOrder = function(index) {
+            showModal(
+                "Delete Archived Order?",
+                "Are you sure you want to remove this order from archives? Sales, Net Income, and Tithes will be recalculated.",
+                async () => {
+                    const currentReport = archivedReports[selectedDate];
+                    if (!currentReport || !currentReport.orders) return;
+
+                    currentReport.orders.splice(index, 1);
+
+                    if (isFirebaseAvailable && db) {
+                        try {
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
+                        } catch(e) {
+                            console.error("Archived order delete error:", e);
+                        }
+                    } else {
+                        archivedReports[selectedDate] = currentReport;
+                        localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                        window.loadSelectedDateReport();
+                    }
+
+                    showToast("Archived order deleted & figures updated.", "info");
+                }
+            );
+        };
 
         window.handleAddExpense = async function(event) {
             event.preventDefault();
@@ -1002,7 +1457,7 @@
             } else {
                 archivedReports[selectedDate] = currentReport;
                 localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
-                loadSelectedDateReport();
+                window.loadSelectedDateReport();
             }
 
             document.getElementById('expense-form').reset();
@@ -1024,37 +1479,10 @@
             } else {
                 archivedReports[selectedDate] = currentReport;
                 localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
-                loadSelectedDateReport();
+                window.loadSelectedDateReport();
             }
 
             showToast("Expense entry deleted.", "info");
-        };
-
-        // Navigation Tabs
-        window.switchTab = function(tabId) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-            document.getElementById(tabId).classList.remove('hidden');
-
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('bg-white', 'text-brand-700', 'shadow-sm');
-                btn.classList.add('text-slate-600');
-            });
-
-            const activeBtnMap = {
-                'order-tab': 'nav-order-btn',
-                'manager-tab': 'nav-manager-btn',
-                'reports-tab': 'nav-reports-btn'
-            };
-
-            const activeBtn = document.getElementById(activeBtnMap[tabId]);
-            if (activeBtn) {
-                activeBtn.classList.add('bg-white', 'text-brand-700', 'shadow-sm');
-                activeBtn.classList.remove('text-slate-600');
-            }
-
-            if (tabId === 'reports-tab') {
-                loadSelectedDateReport();
-            }
         };
 
         // UI Helpers
@@ -1098,7 +1526,7 @@
 
         document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
             if (pendingModalAction) await pendingModalAction();
-            closeModal();
+            window.closeModal();
         });
 
         // Initialize App
