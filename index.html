@@ -1,0 +1,2043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salad, Actually - Order & Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- html2canvas for taking receipt image screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            200: '#bbf7d0',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Printable thermal receipt formatting */
+        @media print {
+            body * { visibility: hidden !important; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible !important; }
+            #receipt-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 10px !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3">
+                    <a href="#" class="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-900 text-2xl overflow-hidden shrink-0">
+                        <img src="Logo.png" alt="Salad, Actually Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-leaf text-brand-600\'></i>';">
+                    </a>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                            Salad, <span class="text-brand-600">Actually</span>
+                        </h1>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex space-x-1 sm:space-x-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60">
+                    <button id="nav-order-btn" onclick="switchTab('order-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 flex items-center gap-2 bg-white text-brand-700 shadow-sm">
+                        <i class="fa-solid fa-utensils"></i>
+                        <span>Order Form</span>
+                    </button>
+                    <button id="nav-manager-btn" onclick="switchTab('manager-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2 relative">
+                        <i class="fa-solid fa-list-check"></i>
+                        <span>Orders Manager</span>
+                        <span id="active-badge" class="bg-brand-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                    <button id="nav-reports-btn" onclick="switchTab('reports-tab')" class="tab-btn px-3 sm:px-5 py-2.5 rounded-xl font-bold text-xs sm:text-sm text-slate-600 hover:text-slate-900 transition-all duration-200 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Daily Reports</span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- TAB 1: ORDER FORM -->
+        <section id="order-tab" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Menu Selection -->
+            <div class="lg:col-span-7 space-y-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Select Menu Items</h2>
+                    <p class="text-slate-500 text-sm mt-1">Add items and select quantities to build your customer's order.</p>
+                </div>
+
+                <div id="menu-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Menu items loaded immediately via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Right: Total Order & Customer Details -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 space-y-6 sticky top-28">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-brand-600"></i>
+                            Total Order
+                        </h3>
+                        <button type="button" onclick="clearCart()" class="text-xs font-bold text-rose-500 hover:text-rose-700 transition">
+                            Clear Cart
+                        </button>
+                    </div>
+
+                    <!-- Cart Item List -->
+                    <div id="cart-list" class="space-y-3 max-h-56 overflow-y-auto pr-1 divide-y divide-slate-100">
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-basket-shopping text-3xl mb-2 block opacity-50"></i>
+                            <p class="text-sm font-medium">Your cart is empty.</p>
+                        </div>
+                    </div>
+
+                    <!-- Order Summary Totals -->
+                    <div class="border-t border-slate-200 pt-4 space-y-2">
+                        <div class="flex justify-between text-sm text-slate-600 font-medium">
+                            <span>Subtotal</span>
+                            <span id="cart-subtotal">₱0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-slate-600 font-medium gap-2 pt-1">
+                            <label for="transport-fee" class="text-xs font-bold text-slate-700 shrink-0">Transportation Fee (₱)</label>
+                            <input type="number" id="transport-fee" min="0" step="1" value="0" oninput="updateCartTotals()"
+                                class="w-24 px-2 py-1 text-right text-sm bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold">
+                        </div>
+                        <div class="flex justify-between text-lg font-extrabold text-slate-900 pt-2 border-t border-slate-100">
+                            <span>Grand Total</span>
+                            <span id="cart-total" class="text-brand-600">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details Form -->
+                    <form id="order-form" onsubmit="handleSaveOrder(event)" class="space-y-4 pt-2 border-t border-slate-200">
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Customer & Payment Info</h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name *</label>
+                                <input type="text" id="cust-name" required placeholder="e.g. Maria Clara"
+                                    class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Contact Number</label>
+                                <input type="tel" id="cust-phone" placeholder="09XX XXX XXXX"
+                                    class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                        </div>
+
+                        <!-- Order Type & Payment Method -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Order Type *</label>
+                                <select id="cust-order-type" required
+                                    class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                                    <option value="Pick-up">Pick-up</option>
+                                    <option value="Delivery">Delivery</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method *</label>
+                                <select id="cust-payment-method" required
+                                    class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                                    <option value="GCASH">GCASH Payment</option>
+                                    <option value="Cash On Delivery">Cash On Delivery</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Payment Status & Pickup / Delivery Time -->
+                        <div class="grid grid-cols-1 sm:grid-cols-1 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Payment Status *</label>
+                                <select id="cust-payment-status" required
+                                    class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                                    <option value="Unpaid">Unpaid</option>
+                                    <option value="Paid">Paid</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Order Schedule Selector (Today vs Advance Day Reservation) - FIRST BEFORE DELIVERY TIME -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1.5">Order Schedule *</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <label class="flex items-center gap-2.5 cursor-pointer text-xs font-extrabold text-slate-700 select-none p-1.5 rounded-lg hover:bg-slate-100 transition">
+                                    <input type="checkbox" id="order-schedule-today" checked onchange="handleScheduleToggle('today')" class="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer">
+                                    <span>Today</span>
+                                </label>
+                                <label class="flex items-center gap-2.5 cursor-pointer text-xs font-extrabold text-slate-700 select-none p-1.5 rounded-lg hover:bg-slate-100 transition">
+                                    <input type="checkbox" id="order-schedule-advance" onchange="handleScheduleToggle('advance')" class="w-5 h-5 text-brand-600 rounded focus:ring-brand-500 cursor-pointer">
+                                    <span>Advance Day Reservation</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Advance Reservation Date Field (Conditional Config) -->
+                        <div id="advance-date-wrapper" class="hidden">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Reservation Date *</label>
+                            <input type="date" id="cust-advance-date"
+                                class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                        </div>
+
+                        <!-- Pick up / Delivery Time Dropdown (Conditional on schedule selection) -->
+                        <div id="delivery-time-wrapper">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Pick up / Delivery Time *</label>
+                            <select id="cust-time" required
+                                class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                                <option value="" disabled selected>-- Select Time Slot --</option>
+                                <option value="08:00 AM">8:00 AM</option>
+                                <option value="08:30 AM">8:30 AM</option>
+                                <option value="09:00 AM">9:00 AM</option>
+                                <option value="09:30 AM">9:30 AM</option>
+                                <option value="10:00 AM">10:00 AM</option>
+                                <option value="10:30 AM">10:30 AM</option>
+                                <option value="11:00 AM">11:00 AM</option>
+                                <option value="11:30 AM">11:30 AM</option>
+                                <option value="12:00 PM">12:00 PM</option>
+                                <option value="12:30 PM">12:30 PM</option>
+                                <option value="01:00 PM">1:00 PM</option>
+                                <option value="01:30 PM">1:30 PM</option>
+                                <option value="02:00 PM">2:00 PM</option>
+                                <option value="02:30 PM">2:30 PM</option>
+                                <option value="03:00 PM">3:00 PM</option>
+                                <option value="03:30 PM">3:30 PM</option>
+                                <option value="04:00 PM">4:00 PM</option>
+                                <option value="04:30 PM">4:30 PM</option>
+                                <option value="05:00 PM">5:00 PM</option>
+                                <option value="05:30 PM">5:30 PM</option>
+                                <option value="06:00 PM">6:00 PM</option>
+                                <option value="06:30 PM">6:30 PM</option>
+                                <option value="07:00 PM">7:00 PM</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label id="notes-label" class="block text-xs font-bold text-slate-700 mb-1">Notes / Address *</label>
+                            <textarea id="cust-notes" rows="2" required placeholder="Specific notes or complete delivery address..."
+                                class="w-full px-3.5 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-3.5 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold rounded-2xl shadow-lg shadow-brand-600/30 transition transform active:scale-98 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            Save Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ORDERS MANAGER -->
+        <section id="manager-tab" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Active Orders Manager</h2>
+                    <p class="text-slate-500 text-sm mt-1">Manage live order statuses across stand-alone status tabs.</p>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="triggerManualDailyArchive()" class="px-4 py-2.5 bg-brand-50 text-brand-700 border border-brand-200 hover:bg-brand-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-box-archive"></i>
+                        <span>Save Today's Orders</span>
+                    </button>
+                    <button type="button" onclick="promptRemoveAllOrders()" class="px-4 py-2.5 bg-rose-50 text-rose-600 border border-rose-200 hover:bg-rose-100 font-bold text-xs sm:text-sm rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i>
+                        <span>Clear Live Orders</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stand-Alone Status Tabs Bar -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2" id="filter-bar">
+                <button type="button" onclick="setFilter('All')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white transition shadow-sm">All</button>
+                <div class="h-5 w-px bg-slate-200 mx-1 self-center"></div>
+                <button type="button" onclick="setFilter('Preparing')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Preparing</button>
+                <button type="button" onclick="setFilter('Advance Day Reservation')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Advance Day Reservation</button>
+                <button type="button" onclick="setFilter('For Pick-up')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For Pick-up</button>
+                <button type="button" onclick="setFilter('For Delivery')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">For Delivery</button>
+                <div class="h-5 w-px bg-slate-200 mx-1 self-center"></div>
+                <button type="button" onclick="setFilter('Delivered/Completed')" class="filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition">Delivered/Completed</button>
+            </div>
+
+            <div id="orders-feed" class="space-y-8">
+                <!-- Live Orders Grouped By Time Slot Populate Here -->
+            </div>
+        </section>
+
+        <!-- TAB 3: DAILY REPORTS & EXPENSES -->
+        <section id="reports-tab" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Sales & Expense Reports</h2>
+                    <p class="text-slate-500 text-sm mt-1">Review historical order archives, daily costs, and net income.</p>
+                </div>
+
+                <!-- Date Selector for History -->
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Select Date:</label>
+                    <input type="date" id="report-date-picker" onchange="loadSelectedDateReport()" 
+                        class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-500">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Gross Sales</span>
+                        <i class="fa-solid fa-sack-dollar text-emerald-500 text-lg"></i>
+                    </div>
+                    <div id="stat-gross" class="text-2xl font-black text-slate-900">₱0.00</div>
+                    <p class="text-xs text-slate-400 font-medium">Total sales revenue</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Total Expenses</span>
+                        <i class="fa-solid fa-arrow-trend-down text-rose-500 text-lg"></i>
+                    </div>
+                    <div id="stat-expenses" class="text-2xl font-black text-rose-600">₱0.00</div>
+                    <p class="text-xs text-slate-400 font-medium">Recorded daily costs</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Net Income</span>
+                        <i class="fa-solid fa-chart-pie text-brand-600 text-lg"></i>
+                    </div>
+                    <div id="stat-net" class="text-2xl font-black text-brand-600">₱0.00</div>
+                    <p class="text-xs text-slate-400 font-medium">Gross minus Expenses</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Tithes (10%)</span>
+                        <i class="fa-solid fa-hand-holding-heart text-amber-500 text-lg"></i>
+                    </div>
+                    <div id="stat-tithes" class="text-2xl font-black text-amber-600">₱0.00</div>
+                    <p class="text-xs text-slate-400 font-medium">10% of Net Income</p>
+                </div>
+
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-2">
+                    <div class="flex items-center justify-between text-slate-400">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Total Orders</span>
+                        <i class="fa-solid fa-box text-blue-500 text-lg"></i>
+                    </div>
+                    <div id="stat-orders-count" class="text-2xl font-black text-slate-900">0</div>
+                    <p class="text-xs text-slate-400 font-medium">Archived orders</p>
+                </div>
+            </div>
+
+            <!-- Weekly and Monthly Summaries -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-brand-600"></i>
+                    Weekly & Monthly Overview
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Weekly Summary Box -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Week Summary</span>
+                            <span id="weekly-range-label" class="text-[11px] font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 pt-1 text-center">
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="weekly-gross" class="text-xs font-black text-slate-900">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="weekly-expenses" class="text-xs font-black text-rose-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Net</p>
+                                <p id="weekly-net" class="text-xs font-black text-brand-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-amber-500">Tithes</p>
+                                <p id="weekly-tithes" class="text-xs font-black text-amber-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="weekly-orders" class="text-xs font-black text-slate-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Summary Box -->
+                    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Month Summary</span>
+                            <span id="monthly-range-label" class="text-[11px] font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 pt-1 text-center">
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="monthly-gross" class="text-xs font-black text-slate-900">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="monthly-expenses" class="text-xs font-black text-rose-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Net</p>
+                                <p id="monthly-net" class="text-xs font-black text-brand-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-amber-500">Tithes</p>
+                                <p id="monthly-tithes" class="text-xs font-black text-amber-600">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-2 rounded-xl border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="monthly-orders" class="text-xs font-black text-slate-900">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout: Expenses & Archived Orders -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Daily Expenses Log -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-receipt text-rose-500"></i>
+                            Daily Expense Tracker
+                        </h3>
+                        <p class="text-xs text-slate-500">Enter expenses for the selected date to compute Net Income.</p>
+
+                        <form id="expense-form" onsubmit="handleAddExpense(event)" class="space-y-3 pt-2">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Expense Description</label>
+                                <input type="text" id="expense-desc" required placeholder="e.g. Fresh Greens & Packaging"
+                                    class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Amount (₱)</label>
+                                <input type="number" id="expense-amount" step="0.01" min="0" required placeholder="0.00"
+                                    class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+                                <i class="fa-solid fa-plus"></i> Add Expense Entry
+                            </button>
+                        </form>
+
+                        <div class="border-t border-slate-100 pt-4">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Logged Expenses List</h4>
+                            <div id="expenses-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                                <!-- Dynamic expense list -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Archived Orders Breakdown -->
+                <div class="lg:col-span-7">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm space-y-4">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-folder-open text-brand-600"></i>
+                            Archived Orders Breakdown
+                        </h3>
+                        <div id="archived-orders-list" class="space-y-3 max-h-[500px] overflow-y-auto pr-1">
+                            <!-- Dynamic archived orders -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-5 right-5 z-50 transform translate-y-[-150%] opacity-0 transition-all duration-300 ease-in-out max-w-md bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700/50">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-emerald-400 text-xl"></i>
+        <span id="toast-message" class="text-sm font-medium">Notification</span>
+    </div>
+
+    <!-- Modal Dialog -->
+    <div id="modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center text-xl">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="modal-title" class="text-lg font-extrabold text-slate-900">Are you sure?</h3>
+                <p id="modal-desc" class="text-slate-500 text-sm mt-1">This action cannot be undone.</p>
+            </div>
+            <div class="flex justify-end gap-3 pt-2">
+                <button type="button" onclick="closeModal()" class="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">Cancel</button>
+                <button id="modal-confirm-btn" type="button" class="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl transition shadow-lg shadow-rose-600/30">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal Container -->
+    <div id="edit-modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-600"></i>
+                    Modify Order
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <form id="edit-order-form" onsubmit="handleSaveEditedOrder(event)" class="space-y-4">
+                <input type="hidden" id="edit-order-id">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Customer Name</label>
+                        <input type="text" id="edit-cust-name" required
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Contact Number</label>
+                        <input type="tel" id="edit-cust-phone" placeholder="09XX XXX XXXX"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Order Type</label>
+                        <select id="edit-order-type" required
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                            <option value="Pick-up">Pick-up</option>
+                            <option value="Delivery">Delivery</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Pick up / Delivery Time</label>
+                        <input type="text" id="edit-cust-time" required placeholder="e.g. 12:30 PM Today"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                        <select id="edit-payment-method" required
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700">
+                            <option value="GCASH">GCASH Payment</option>
+                            <option value="Cash On Delivery">Cash On Delivery</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Transport Fee (₱)</label>
+                        <input type="number" id="edit-transport-fee" min="0" step="1" oninput="recalculateEditTotal()"
+                            class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Notes / Address</label>
+                    <textarea id="edit-cust-notes" rows="2" placeholder="Specific notes or complete delivery address..."
+                        class="w-full px-3.5 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Items in Order</label>
+                    <div id="edit-menu-items" class="space-y-2 max-h-48 overflow-y-auto pr-1 border border-slate-100 p-2 rounded-2xl bg-slate-50">
+                        <!-- Dynamic Edit Menu Items -->
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                    <span class="text-xs font-extrabold uppercase text-slate-400">New Total</span>
+                    <span id="edit-total-preview" class="text-lg font-black text-brand-600">₱0.00</span>
+                </div>
+
+                <div class="flex gap-2 pt-2">
+                    <button type="button" onclick="closeEditModal()" class="w-1/2 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="w-1/2 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-brand-600/30 transition">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Hidden Receipt Container for Printing & Screenshot Capture -->
+    <div id="receipt-modal-container" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 space-y-4 my-8 flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-brand-600"></i>
+                    Order Receipt
+                </h3>
+                <button type="button" onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-600 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Styled Thermal Receipt Area -->
+            <div id="receipt-print-area" class="bg-white text-slate-900 font-mono text-xs p-5 rounded-2xl border border-slate-200 shadow-inner space-y-4">
+                <div class="text-center space-y-1">
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 text-xl mx-auto mb-2 overflow-hidden">
+                        <img src="Logo.png" alt="Salad, Actually Logo" class="w-full h-full object-cover" onerror="this.onerror=null; this.parentElement.innerHTML='<i class=\'fa-solid fa-leaf text-brand-600\'></i>';">
+                    </div>
+                    <h2 class="font-extrabold text-base uppercase tracking-wider text-slate-900">Salad, Actually</h2>
+                    <p class="text-[10px] text-slate-500 uppercase tracking-widest font-sans">Contact: 09687189001</p>
+                    <div class="border-b border-dashed border-slate-300 my-2"></div>
+                </div>
+
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Date:</span> <span id="rec-date" class="font-semibold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Customer:</span> <span id="rec-name" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Contact:</span> <span id="rec-phone" class="font-semibold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Order Type:</span> <span id="rec-type" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Delivery Time:</span> <span id="rec-time" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Payment:</span> <span id="rec-payment" class="font-extrabold">--</span></div>
+                </div>
+
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <!-- Items Breakdown -->
+                <div class="space-y-1.5 font-sans">
+                    <p class="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider">Ordered Items</p>
+                    <div id="rec-items-list" class="space-y-1 text-[11px]">
+                        <!-- Rendered items -->
+                    </div>
+                </div>
+
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <!-- Totals -->
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Subtotal:</span> <span id="rec-subtotal" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Transport Fee:</span> <span id="rec-trans" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between text-sm font-black pt-1 border-t border-slate-200">
+                        <span>TOTAL:</span>
+                        <span id="rec-total" class="text-emerald-700">₱0.00</span>
+                    </div>
+                </div>
+
+                <div class="border-b border-dashed border-slate-300"></div>
+
+                <div class="text-center font-sans space-y-1">
+                    <p class="text-[10px] text-slate-500 italic">Thank you for ordering with us!</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase">Salad, Actually ©</p>
+                </div>
+            </div>
+
+            <!-- Receipt Actions -->
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button type="button" onclick="triggerPrintReceipt()" class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i>
+                    <span>Print Receipt</span>
+                </button>
+                <button type="button" onclick="captureReceiptScreenshot()" class="py-2.5 px-3 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-brand-600/30 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>Download Image</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application JavaScript Logic & Firebase SDK Setup -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase state declarations
+        let db = null;
+        let auth = null;
+        let isFirebaseAvailable = false;
+        const appId = 'salad-actually-app';
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-1LN3pdxUecpHHPj6jU2oJaxCDp7eTdA",
+            authDomain: "salad-actually-1fc68.firebaseapp.com",
+            projectId: "salad-actually-1fc68",
+            storageBucket: "salad-actually-1fc68.firebasestorage.app",
+            messagingSenderId: "321147308203",
+            appId: "1:321147308203:web:a67766d6ed39dcf9c4cfee",
+            measurementId: "G-JHDRKQD4BC"
+        };
+
+        // Initialize Firebase if config is provided
+        try {
+            if (firebaseConfig.projectId) {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                isFirebaseAvailable = true;
+            }
+        } catch (e) {
+            console.warn("Firebase initialization skipped or failed, falling back to LocalStorage:", e);
+            isFirebaseAvailable = false;
+        }
+
+        // Menu Data
+        const MENU = [
+            { id: 1, name: "Grilled Chicken Salad", price: 170, icon: "fa-drumstick-bite", category: "Salad" },
+            { id: 2, name: "Protein-packed Salad", price: 170, icon: "fa-egg", category: "Salad" },
+            { id: 3, name: "Tropical Crunch Salad", price: 150, icon: "fa-apple-whole", category: "Salad" },
+            { id: 8, name: "Mango Kani Roll", price: 150, icon: "fa-utensils", category: "Roll" },
+            { id: 4, name: "Peanut Butter Banana", price: 65, icon: "fa-cookie", category: "Snack" },
+            { id: 5, name: "Dragon Fruit Trail Mix", price: 75, icon: "fa-seedling", category: "Snack" },
+            { id: 6, name: "Chicken Adobo Rice Bowl", price: 110, icon: "fa-bowl-rice", category: "Rice Bowl" },
+            { id: 7, name: "Cajun Salmon Rice Bowl", price: 130, icon: "fa-fish", category: "Rice Bowl" },
+            { id: 9, name: "Grilled Chicken Salad Food Tray", price: 1250, icon: "fa-boxes-packing", category: "Food Tray" },
+            { id: 10, name: "Mango Kani Roll Food Tray", price: 590, icon: "fa-boxes-packing", category: "Food Tray" }
+        ];
+
+        // State variables
+        let cart = {}; // { itemId: quantity }
+        let activeOrders = [];
+        let archivedReports = {};
+        let currentFilter = 'All';
+        let selectedDate = getFormattedDate(new Date());
+        let editingCart = {}; // Temp cart for edit order modal
+        let currentReceiptOrder = null;
+        let isAdvanceReservationEnabled = false;
+
+        // Local Storage Keys
+        const LOCAL_ORDERS_KEY = 'salad_actually_active_orders';
+        const LOCAL_REPORTS_KEY = 'salad_actually_daily_reports';
+
+        function handleScheduleToggle(mode) {
+            const todayCb = document.getElementById('order-schedule-today');
+            const advanceCb = document.getElementById('order-schedule-advance');
+            const advanceWrapper = document.getElementById('advance-date-wrapper');
+            const dateInput = document.getElementById('cust-advance-date');
+            const timeWrapper = document.getElementById('delivery-time-wrapper');
+            const timeInput = document.getElementById('cust-time');
+
+            if (mode === 'today') {
+                if (todayCb && todayCb.checked) {
+                    if (advanceCb) advanceCb.checked = false;
+                    isAdvanceReservationEnabled = false;
+                    if (advanceWrapper) advanceWrapper.classList.add('hidden');
+                    if (dateInput) dateInput.removeAttribute('required');
+                    if (timeWrapper) timeWrapper.classList.remove('hidden');
+                    if (timeInput) timeInput.setAttribute('required', 'required');
+                } else if (todayCb && !todayCb.checked && (!advanceCb || !advanceCb.checked)) {
+                    if (timeWrapper) timeWrapper.classList.add('hidden');
+                    if (timeInput) timeInput.removeAttribute('required');
+                }
+            } else if (mode === 'advance') {
+                if (advanceCb && advanceCb.checked) {
+                    if (todayCb) todayCb.checked = false;
+                    isAdvanceReservationEnabled = true;
+                    if (advanceWrapper) advanceWrapper.classList.remove('hidden');
+                    if (dateInput) dateInput.setAttribute('required', 'required');
+                    if (timeWrapper) timeWrapper.classList.remove('hidden');
+                    if (timeInput) timeInput.setAttribute('required', 'required');
+                } else if (advanceCb && !advanceCb.checked && (!todayCb || !todayCb.checked)) {
+                    isAdvanceReservationEnabled = false;
+                    if (advanceWrapper) advanceWrapper.classList.add('hidden');
+                    if (dateInput) dateInput.removeAttribute('required');
+                    if (timeWrapper) timeWrapper.classList.add('hidden');
+                    if (timeInput) timeInput.removeAttribute('required');
+                }
+            }
+        }
+        window.handleScheduleToggle = handleScheduleToggle;
+
+        function getFormattedDate(d) {
+            const date = new Date(d);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return year + '-' + month + '-' + day;
+        }
+
+        // Navigation Tabs attached to window scope
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) targetTab.classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-brand-700', 'shadow-sm');
+                btn.classList.add('text-slate-600');
+            });
+
+            const activeBtnMap = {
+                'order-tab': 'nav-order-btn',
+                'manager-tab': 'nav-manager-btn',
+                'reports-tab': 'nav-reports-btn'
+            };
+
+            const activeBtn = document.getElementById(activeBtnMap[tabId]);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white', 'text-brand-700', 'shadow-sm');
+                activeBtn.classList.remove('text-slate-600');
+            }
+
+            if (tabId === 'reports-tab') {
+                loadSelectedDateReport();
+            }
+        }
+        window.switchTab = switchTab;
+
+        function updateCartTotals() {
+            renderCart();
+        }
+        window.updateCartTotals = updateCartTotals;
+
+        // Render Menu Cards
+        function renderMenu() {
+            const grid = document.getElementById('menu-grid');
+            if (!grid) return;
+            
+            grid.innerHTML = MENU.map(item => `
+                <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm flex flex-col justify-between hover:border-brand-300 transition group">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="w-10 h-10 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center text-lg group-hover:bg-brand-600 group-hover:text-white transition">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">${item.category}</span>
+                    </div>
+                    <div class="mt-4">
+                        <h3 class="font-extrabold text-slate-900 text-base leading-snug">${item.name}</h3>
+                        <p class="text-brand-700 font-extrabold text-lg mt-1">₱${item.price.toFixed(2)}</p>
+                    </div>
+                    <div class="mt-4 flex items-center justify-between bg-slate-50 p-1.5 rounded-2xl border border-slate-100">
+                        <button type="button" onclick="updateCartQuantity(${item.id}, -1)" class="w-8 h-8 rounded-xl bg-white text-slate-700 font-bold shadow-sm hover:bg-slate-200 transition flex items-center justify-center">
+                            <i class="fa-solid fa-minus text-xs"></i>
+                        </button>
+                        <span id="menu-qty-${item.id}" class="font-extrabold text-sm text-slate-800">0</span>
+                        <button type="button" onclick="updateCartQuantity(${item.id}, 1)" class="w-8 h-8 rounded-xl bg-brand-600 text-white font-bold shadow-sm hover:bg-brand-700 transition flex items-center justify-center">
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Cart Actions
+        function updateCartQuantity(itemId, delta) {
+            const currentQty = cart[itemId] || 0;
+            const newQty = Math.max(0, currentQty + delta);
+            if (newQty === 0) {
+                delete cart[itemId];
+            } else {
+                cart[itemId] = newQty;
+            }
+
+            const menuQtyEl = document.getElementById(`menu-qty-${itemId}`);
+            if (menuQtyEl) menuQtyEl.innerText = newQty;
+
+            renderCart();
+        }
+        window.updateCartQuantity = updateCartQuantity;
+
+        function clearCart() {
+            cart = {};
+            MENU.forEach(item => {
+                const el = document.getElementById(`menu-qty-${item.id}`);
+                if (el) el.innerText = "0";
+            });
+            const transFeeInput = document.getElementById('transport-fee');
+            if (transFeeInput) transFeeInput.value = 0;
+            renderCart();
+        }
+        window.clearCart = clearCart;
+
+        function renderCart() {
+            const cartList = document.getElementById('cart-list');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const totalEl = document.getElementById('cart-total');
+            const transFeeInput = document.getElementById('transport-fee');
+            const transportFee = transFeeInput ? parseFloat(transFeeInput.value) || 0 : 0;
+
+            const itemIds = Object.keys(cart);
+            if (itemIds.length === 0) {
+                cartList.innerHTML = `
+                    <div class="text-center py-8 text-slate-400">
+                        <i class="fa-solid fa-basket-shopping text-3xl mb-2 block opacity-50"></i>
+                        <p class="text-sm font-medium">Your cart is empty.</p>
+                    </div>
+                `;
+                subtotalEl.innerText = "₱0.00";
+                totalEl.innerText = '₱' + transportFee.toFixed(2);
+                return;
+            }
+
+            let subtotal = 0;
+            cartList.innerHTML = itemIds.map(id => {
+                const item = MENU.find(m => m.id == id);
+                const qty = cart[id];
+                const itemTotal = item.price * qty;
+                subtotal += itemTotal;
+
+                return `
+                    <div class="flex items-center justify-between py-2">
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">${item.name}</p>
+                            <p class="text-xs text-slate-400">₱${item.price.toFixed(2)} x ${qty}</p>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-sm font-extrabold text-slate-900">₱${itemTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const grandTotal = subtotal + transportFee;
+            subtotalEl.innerText = '₱' + subtotal.toFixed(2);
+            totalEl.innerText = '₱' + grandTotal.toFixed(2);
+        }
+
+        // Save Order Handler
+        async function handleSaveOrder(event) {
+            event.preventDefault();
+
+            const itemIds = Object.keys(cart);
+            if (itemIds.length === 0) {
+                showToast("Please select at least one menu item before saving.", "error");
+                return;
+            }
+
+            const name = document.getElementById('cust-name').value.trim();
+            const phone = document.getElementById('cust-phone').value.trim();
+            const orderType = document.getElementById('cust-order-type').value;
+            const paymentMethod = document.getElementById('cust-payment-method').value;
+            const paymentStatus = document.getElementById('cust-payment-status').value;
+            const time = document.getElementById('cust-time').value.trim();
+            const advanceDate = isAdvanceReservationEnabled ? document.getElementById('cust-advance-date').value : '';
+            const status = "Preparing"; // Initial status is always Preparing
+            const notes = document.getElementById('cust-notes').value.trim();
+            const transportFee = parseFloat(document.getElementById('transport-fee').value) || 0;
+
+            let itemsSubtotal = 0;
+            const orderItems = itemIds.map(id => {
+                const item = MENU.find(m => m.id == id);
+                const qty = cart[id];
+                itemsSubtotal += item.price * qty;
+                return { id: item.id, name: item.name, price: item.price, quantity: qty };
+            });
+
+            const totalPrice = itemsSubtotal + transportFee;
+            const displayTime = advanceDate ? advanceDate + ' @ ' + time : time;
+
+            const newOrder = {
+                id: 'ORD-' + Math.floor(100000 + Math.random() * 900000),
+                customerName: name,
+                contactNumber: phone,
+                orderType: orderType,
+                paymentMethod: paymentMethod,
+                paymentStatus: paymentStatus,
+                pickupDeliveryTime: displayTime,
+                advanceDate: advanceDate,
+                status: status,
+                notesAddress: notes,
+                transportationFee: transportFee,
+                items: orderItems,
+                totalPrice: totalPrice,
+                dateCreated: getFormattedDate(new Date()),
+                timestamp: Date.now()
+            };
+
+            await saveOrderToStorage(newOrder);
+
+            showToast("Order saved successfully!", "success");
+            clearCart();
+            document.getElementById('order-form').reset();
+            handleScheduleToggle('today');
+        }
+        window.handleSaveOrder = handleSaveOrder;
+
+        function openEditModal(orderId) {
+            const order = activeOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            document.getElementById('edit-order-id').value = order.id;
+            document.getElementById('edit-cust-name').value = order.customerName || '';
+            document.getElementById('edit-cust-phone').value = order.contactNumber || '';
+            document.getElementById('edit-order-type').value = order.orderType || 'Pick-up';
+            document.getElementById('edit-cust-time').value = order.pickupDeliveryTime || '';
+            document.getElementById('edit-payment-method').value = order.paymentMethod || 'GCASH';
+            document.getElementById('edit-transport-fee').value = order.transportationFee || 0;
+            document.getElementById('edit-cust-notes').value = order.notesAddress || '';
+
+            // Reconstruct temporary editing cart
+            editingCart = {};
+            (order.items || []).forEach(item => {
+                editingCart[item.id] = item.quantity;
+            });
+
+            renderEditMenu();
+            recalculateEditTotal();
+
+            document.getElementById('edit-modal-container').classList.remove('hidden');
+        }
+        window.openEditModal = openEditModal;
+
+        function closeEditModal() {
+            document.getElementById('edit-modal-container').classList.add('hidden');
+            editingCart = {};
+        }
+        window.closeEditModal = closeEditModal;
+
+        function renderEditMenu() {
+            const container = document.getElementById('edit-menu-items');
+            if (!container) return;
+
+            container.innerHTML = MENU.map(item => {
+                const qty = editingCart[item.id] || 0;
+                return `
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100 text-xs">
+                        <div class="font-bold text-slate-800">
+                            ${item.name}
+                            <span class="text-slate-400 font-normal ml-1">(₱${item.price.toFixed(2)})</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="updateEditCartQty(${item.id}, -1)" class="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">
+                                -
+                            </button>
+                            <span id="edit-qty-${item.id}" class="font-extrabold w-4 text-center">${qty}</span>
+                            <button type="button" onclick="updateEditCartQty(${item.id}, 1)" class="w-6 h-6 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center">
+                                +
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function updateEditCartQty(itemId, delta) {
+            const current = editingCart[itemId] || 0;
+            const updated = Math.max(0, current + delta);
+            if (updated === 0) {
+                delete editingCart[itemId];
+            } else {
+                editingCart[itemId] = updated;
+            }
+
+            const qtyEl = document.getElementById(`edit-qty-${itemId}`);
+            if (qtyEl) qtyEl.innerText = updated;
+
+            recalculateEditTotal();
+        }
+        window.updateEditCartQty = updateEditCartQty;
+
+        function recalculateEditTotal() {
+            let subtotal = 0;
+            Object.keys(editingCart).forEach(id => {
+                const item = MENU.find(m => m.id == id);
+                if (item) subtotal += item.price * editingCart[id];
+            });
+
+            const transFee = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+            const total = subtotal + transFee;
+
+            document.getElementById('edit-total-preview').innerText = '₱' + total.toFixed(2);
+        }
+        window.recalculateEditTotal = recalculateEditTotal;
+
+        // Receipt Printing & Image Capture Modal
+        function openReceiptModal(orderId, source = 'active') {
+            let order = null;
+
+            if (source === 'active') {
+                order = activeOrders.find(o => o.id === orderId);
+            } else {
+                const report = archivedReports[selectedDate];
+                if (report && report.orders) {
+                    order = report.orders.find(o => o.id === orderId || o.customerName === orderId);
+                }
+            }
+
+            if (!order) {
+                showToast("Order not found for receipt preview.", "error");
+                return;
+            }
+
+            currentReceiptOrder = order;
+
+            document.getElementById('rec-date').innerText = order.dateCreated || getFormattedDate(new Date());
+            document.getElementById('rec-name').innerText = order.customerName || 'N/A';
+            document.getElementById('rec-phone').innerText = order.contactNumber || 'N/A';
+            document.getElementById('rec-type').innerText = order.orderType || 'Pick-up';
+            document.getElementById('rec-time').innerText = order.pickupDeliveryTime || 'N/A';
+            document.getElementById('rec-payment').innerText = order.paymentMethod || 'GCASH';
+
+            let itemsSubtotal = 0;
+            const itemsListEl = document.getElementById('rec-items-list');
+            itemsListEl.innerHTML = (order.items || []).map(item => {
+                const itemTotal = item.price * item.quantity;
+                itemsSubtotal += itemTotal;
+                return `
+                    <div class="flex justify-between text-slate-700">
+                        <span>${item.quantity}x ${item.name}</span>
+                        <span class="font-bold">₱${itemTotal.toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+
+            const transFee = order.transportationFee || 0;
+            const grandTotal = order.totalPrice || (itemsSubtotal + transFee);
+
+            document.getElementById('rec-subtotal').innerText = '₱' + itemsSubtotal.toFixed(2);
+            document.getElementById('rec-trans').innerText = '₱' + transFee.toFixed(2);
+            document.getElementById('rec-total').innerText = '₱' + grandTotal.toFixed(2);
+
+            document.getElementById('receipt-modal-container').classList.remove('hidden');
+        }
+        window.openReceiptModal = openReceiptModal;
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal-container').classList.add('hidden');
+            currentReceiptOrder = null;
+        }
+        window.closeReceiptModal = closeReceiptModal;
+
+        function triggerPrintReceipt() {
+            window.print();
+        }
+        window.triggerPrintReceipt = triggerPrintReceipt;
+
+        function captureReceiptScreenshot() {
+            const receiptArea = document.getElementById('receipt-print-area');
+            if (!receiptArea) return;
+
+            showToast("Generating receipt image...", "info");
+
+            html2canvas(receiptArea, {
+                scale: 3,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const image = canvas.toDataURL("image/jpg");
+                const link = document.createElement('a');
+                const orderId = currentReceiptOrder ? (currentReceiptOrder.id || 'receipt') : 'receipt';
+                link.download = `Receipt_${orderId}.jpg`;
+                link.href = image;
+                link.click();
+                showToast("Receipt image downloaded!", "success");
+            }).catch(err => {
+                console.error("Screenshot error:", err);
+                showToast("Failed to generate image.", "error");
+            });
+        }
+        window.captureReceiptScreenshot = captureReceiptScreenshot;
+
+        async function handleSaveEditedOrder(event) {
+            event.preventDefault();
+            const orderId = document.getElementById('edit-order-id').value;
+            const name = document.getElementById('edit-cust-name').value.trim();
+            const phone = document.getElementById('edit-cust-phone').value.trim();
+            const orderType = document.getElementById('edit-order-type').value;
+            const pickupDeliveryTime = document.getElementById('edit-cust-time').value.trim();
+            const paymentMethod = document.getElementById('edit-payment-method').value;
+            const transportFee = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+            const notes = document.getElementById('edit-cust-notes').value.trim();
+
+            const itemIds = Object.keys(editingCart);
+            if (itemIds.length === 0) {
+                showToast("Order must contain at least one item.", "error");
+                return;
+            }
+
+            let itemsSubtotal = 0;
+            const updatedItems = itemIds.map(id => {
+                const item = MENU.find(m => m.id == id);
+                const qty = editingCart[id];
+                itemsSubtotal += item.price * qty;
+                return { id: item.id, name: item.name, price: item.price, quantity: qty };
+            });
+
+            const totalPrice = itemsSubtotal + transportFee;
+
+            if (isFirebaseAvailable && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
+                    await updateDoc(docRef, {
+                        customerName: name,
+                        contactNumber: phone,
+                        orderType: orderType,
+                        pickupDeliveryTime: pickupDeliveryTime,
+                        paymentMethod: paymentMethod,
+                        transportationFee: transportFee,
+                        notesAddress: notes,
+                        items: updatedItems,
+                        totalPrice: totalPrice
+                    });
+                    closeEditModal();
+                    showToast("Order modified successfully!", "success");
+                    return;
+                } catch (e) {
+                    console.error("Failed to edit order:", e);
+                }
+            }
+
+            const order = activeOrders.find(o => o.id === orderId);
+            if (order) {
+                order.customerName = name;
+                order.contactNumber = phone;
+                order.orderType = orderType;
+                order.pickupDeliveryTime = pickupDeliveryTime;
+                order.paymentMethod = paymentMethod;
+                order.transportationFee = transportFee;
+                order.notesAddress = notes;
+                order.items = updatedItems;
+                order.totalPrice = totalPrice;
+
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                renderOrdersFeed();
+                closeEditModal();
+                showToast("Order modified successfully!", "success");
+            }
+        }
+        window.handleSaveEditedOrder = handleSaveEditedOrder;
+
+        // Firebase Sync & Local Storage Management
+        function setupDataListeners() {
+            if (isFirebaseAvailable && db) {
+                const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'activeOrders');
+                onSnapshot(ordersCol, (snapshot) => {
+                    activeOrders = [];
+                    snapshot.forEach(doc => activeOrders.push(doc.data()));
+                    activeOrders.sort((a,b) => b.timestamp - a.timestamp);
+                    renderOrdersFeed();
+                }, (err) => {
+                    console.error("Firestore active orders error:", err);
+                    loadLocalActiveOrders();
+                });
+
+                const reportsCol = collection(db, 'artifacts', appId, 'public', 'data', 'dailyReports');
+                onSnapshot(reportsCol, (snapshot) => {
+                    archivedReports = {};
+                    snapshot.forEach(doc => {
+                        archivedReports[doc.id] = doc.data();
+                    });
+                    loadSelectedDateReport();
+                }, (err) => {
+                    console.error("Firestore reports error:", err);
+                    loadLocalReports();
+                });
+            } else {
+                loadLocalActiveOrders();
+                loadLocalReports();
+            }
+        }
+
+        function loadLocalActiveOrders() {
+            const raw = localStorage.getItem(LOCAL_ORDERS_KEY);
+            activeOrders = raw ? JSON.parse(raw) : [];
+            renderOrdersFeed();
+        }
+
+        function loadLocalReports() {
+            const raw = localStorage.getItem(LOCAL_REPORTS_KEY);
+            archivedReports = raw ? JSON.parse(raw) : {};
+            loadSelectedDateReport();
+        }
+
+        async function saveOrderToStorage(order) {
+            if (isFirebaseAvailable && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', order.id);
+                    await setDoc(docRef, order);
+                    return;
+                } catch(e) {
+                    console.error("Firebase save failed:", e);
+                }
+            }
+            activeOrders.unshift(order);
+            localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+            renderOrdersFeed();
+        }
+
+        function updateOrderStatus(orderId, newStatus) {
+            if (isFirebaseAvailable && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
+                    updateDoc(docRef, { status: newStatus });
+                    showToast("Status updated to " + newStatus, "info");
+                    return;
+                } catch(e) {
+                    console.error("Status update failed:", e);
+                }
+            }
+            const order = activeOrders.find(o => o.id === orderId);
+            if (order) {
+                order.status = newStatus;
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                renderOrdersFeed();
+                showToast("Status updated to " + newStatus, "info");
+            }
+        }
+        window.updateOrderStatus = updateOrderStatus;
+
+        function togglePaymentStatus(orderId, newPaymentStatus) {
+            if (isFirebaseAvailable && db) {
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId);
+                    updateDoc(docRef, { paymentStatus: newPaymentStatus });
+                    showToast("Payment marked as " + newPaymentStatus, "info");
+                    return;
+                } catch(e) {
+                    console.error("Payment status update failed:", e);
+                }
+            }
+            const order = activeOrders.find(o => o.id === orderId);
+            if (order) {
+                order.paymentStatus = newPaymentStatus;
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                renderOrdersFeed();
+                showToast("Payment marked as " + newPaymentStatus, "info");
+            }
+        }
+        window.togglePaymentStatus = togglePaymentStatus;
+
+        // Delete Single Active Order
+        function promptDeleteSingleActiveOrder(orderId) {
+            showModal(
+                "Delete Order?",
+                "Are you sure you want to remove this order from the live board?",
+                async () => {
+                    if (isFirebaseAvailable && db) {
+                        try {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', orderId));
+                        } catch (e) {
+                            console.error("Failed to delete order from Firebase:", e);
+                        }
+                    } else {
+                        activeOrders = activeOrders.filter(o => o.id !== orderId);
+                        localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+                        renderOrdersFeed();
+                    }
+                    showToast("Order removed from board.", "info");
+                }
+            );
+        }
+        window.promptDeleteSingleActiveOrder = promptDeleteSingleActiveOrder;
+
+        // Filter Controls
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                const text = btn.innerText.trim();
+                if ((filter === 'All' && text === 'All') || text === filter) {
+                    btn.className = "filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-900 text-white transition shadow-sm";
+                } else {
+                    btn.className = "filter-btn px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-white text-slate-600 border border-slate-200 hover:bg-slate-100 transition";
+                }
+            });
+            renderOrdersFeed();
+        }
+        window.setFilter = setFilter;
+
+        function renderOrdersFeed() {
+            const feed = document.getElementById('orders-feed');
+            const badge = document.getElementById('active-badge');
+
+            if (badge) {
+                badge.innerText = activeOrders.length;
+                badge.classList.toggle('hidden', activeOrders.length === 0);
+            }
+
+            if (activeOrders.length === 0 && currentFilter === 'All') {
+                feed.innerHTML = `
+                    <div class="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-3 shadow-sm">
+                        <i class="fa-solid fa-clipboard-list text-4xl text-slate-300"></i>
+                        <h3 class="font-extrabold text-slate-700">No active orders found</h3>
+                        <p class="text-xs text-slate-400">There are no orders currently on the live board.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Define statuses to render as distinct boxes
+            let statusesToDisplay = [];
+            if (currentFilter === 'All') {
+                statusesToDisplay = ['PreparingToday', 'AdvanceReservation', 'For Pick-up', 'For Delivery', 'Delivered/Completed'];
+            } else if (currentFilter === 'Preparing') {
+                statusesToDisplay = ['PreparingToday'];
+            } else if (currentFilter === 'Advance Day Reservation') {
+                statusesToDisplay = ['AdvanceReservation'];
+            } else {
+                statusesToDisplay = [currentFilter];
+            }
+
+            const statusConfig = {
+                'PreparingToday': {
+                    title: 'Preparing (Today)',
+                    icon: 'fa-fire-burner',
+                    containerBorder: 'border-amber-300 shadow-md',
+                    headerBg: 'bg-amber-50 text-amber-900 border-amber-200/80',
+                    badgeBg: 'bg-amber-500 text-white',
+                    emptyText: 'No preparing orders for today.'
+                },
+                'AdvanceReservation': {
+                    title: 'Advance Day Reservation',
+                    icon: 'fa-calendar-check',
+                    containerBorder: 'border-indigo-300 shadow-md',
+                    headerBg: 'bg-indigo-50 text-indigo-900 border-indigo-200/80',
+                    badgeBg: 'bg-indigo-600 text-white',
+                    emptyText: 'No advance reservations logged.'
+                },
+                'For Pick-up': {
+                    title: 'For Pick-up',
+                    icon: 'fa-bag-shopping',
+                    containerBorder: 'border-sky-300 shadow-md',
+                    headerBg: 'bg-sky-50 text-sky-900 border-sky-200/80',
+                    badgeBg: 'bg-sky-600 text-white',
+                    emptyText: 'No orders waiting for pick-up.'
+                },
+                'For Delivery': {
+                    title: 'For Delivery',
+                    icon: 'fa-truck',
+                    containerBorder: 'border-purple-300 shadow-md',
+                    headerBg: 'bg-purple-50 text-purple-900 border-purple-200/80',
+                    badgeBg: 'bg-purple-600 text-white',
+                    emptyText: 'No orders out for delivery.'
+                },
+                'Delivered/Completed': {
+                    title: 'Delivered / Completed',
+                    icon: 'fa-circle-check',
+                    containerBorder: 'border-emerald-300 shadow-md',
+                    headerBg: 'bg-emerald-50 text-emerald-900 border-emerald-200/80',
+                    badgeBg: 'bg-emerald-600 text-white',
+                    emptyText: 'No completed orders.'
+                }
+            };
+
+            const statusColors = {
+                'Preparing': 'bg-amber-100 text-amber-800 border-amber-200',
+                'For Pick-up': 'bg-sky-100 text-sky-800 border-sky-200',
+                'For Delivery': 'bg-purple-100 text-purple-800 border-purple-200',
+                'Delivered/Completed': 'bg-emerald-100 text-emerald-800 border-emerald-200'
+            };
+
+            const parseTimeForSort = (timeStr) => {
+                const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+                if (!match) return 9999;
+                let hours = parseInt(match[1], 10);
+                const minutes = parseInt(match[2], 10);
+                const ampm = match[3] ? match[3].toUpperCase() : '';
+                if (ampm === 'PM' && hours < 12) hours += 12;
+                if (ampm === 'AM' && hours === 12) hours = 0;
+                return hours * 60 + minutes;
+            };
+
+            const gridColsClass = statusesToDisplay.length > 1 
+                ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-8' 
+                : 'grid grid-cols-1 gap-8';
+
+            const boxesHtml = statusesToDisplay.map(statusKey => {
+                const cfg = statusConfig[statusKey] || {
+                    title: statusKey,
+                    icon: 'fa-box',
+                    containerBorder: 'border-slate-200',
+                    headerBg: 'bg-slate-50 text-slate-800 border-slate-200',
+                    badgeBg: 'bg-slate-700 text-white',
+                    emptyText: 'No orders found.'
+                };
+
+                // Filter orders for each specific box
+                const ordersInStatus = activeOrders.filter(o => {
+                    if (statusKey === 'PreparingToday') {
+                        return o.status === 'Preparing' && (!o.advanceDate || o.advanceDate === '');
+                    }
+                    if (statusKey === 'AdvanceReservation') {
+                        return o.status === 'Preparing' && o.advanceDate && o.advanceDate !== '';
+                    }
+                    return o.status === statusKey;
+                });
+
+                // Group orders in this status box by pickupDeliveryTime
+                const groupedByTime = {};
+                ordersInStatus.forEach(order => {
+                    const timeKey = (order.pickupDeliveryTime && order.pickupDeliveryTime.trim()) 
+                        ? order.pickupDeliveryTime.trim() 
+                        : 'Unspecified Time';
+                    if (!groupedByTime[timeKey]) {
+                        groupedByTime[timeKey] = [];
+                    }
+                    groupedByTime[timeKey].push(order);
+                });
+
+                const sortedTimeKeys = Object.keys(groupedByTime).sort((a, b) => parseTimeForSort(a) - parseTimeForSort(b));
+
+                let bodyContent = '';
+                if (ordersInStatus.length === 0) {
+                    bodyContent = `
+                        <div class="py-12 text-center text-slate-400 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200 space-y-2">
+                            <i class="fa-solid fa-inbox text-2xl opacity-40"></i>
+                            <p class="text-xs font-semibold">${cfg.emptyText}</p>
+                        </div>
+                    `;
+                } else {
+                    bodyContent = sortedTimeKeys.map(timeSlot => {
+                        const ordersInSlot = groupedByTime[timeSlot];
+
+                        const cardsHtml = ordersInSlot.map(order => {
+                            const isPickup = (order.orderType || 'Pick-up') === 'Pick-up';
+                            const isPaid = order.paymentStatus === 'Paid';
+                            const transFee = order.transportationFee || 0;
+
+                            const phoneHtml = order.contactNumber 
+                                ? '<p class="text-xs text-slate-500 font-semibold"><i class="fa-solid fa-phone text-slate-400 mr-1"></i>' + order.contactNumber + '</p>'
+                                : '';
+
+                            const notesHtml = order.notesAddress
+                                ? '<div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-xs text-slate-600"><span class="font-extrabold text-slate-700 block mb-0.5">Notes/Address:</span>' + order.notesAddress + '</div>'
+                                : '';
+
+                            const itemsHtml = (order.items || []).map(item => 
+                                '<div class="flex justify-between text-sm sm:text-base font-extrabold py-0.5">' +
+                                    '<span class="text-slate-900">' + item.quantity + 'x ' + item.name + '</span>' +
+                                    '<span class="text-brand-700 font-black">₱' + (item.price * item.quantity).toFixed(2) + '</span>' +
+                                '</div>'
+                            ).join('');
+
+                            const transFeeHtml = transFee > 0
+                                ? '<div class="flex justify-between text-xs sm:text-sm font-bold text-brand-700 pt-1.5 border-t border-slate-100"><span>Transportation Fee</span><span class="font-black">₱' + transFee.toFixed(2) + '</span></div>'
+                                : '';
+
+                            const typeBadgeClass = isPickup ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-purple-50 text-purple-700 border-purple-200';
+                            const typeIconClass = isPickup ? 'fa-bag-shopping' : 'fa-truck';
+                            const paymentBtnClass = isPaid ? 'bg-emerald-100 text-emerald-800 border-emerald-300 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-300 hover:bg-amber-200';
+                            const paymentIconClass = isPaid ? 'fa-circle-check text-emerald-600' : 'fa-clock-rotate-left text-amber-600';
+                            const nextPaymentStatus = isPaid ? 'Unpaid' : 'Paid';
+                            const currentStatusColor = statusColors[order.status] || 'bg-slate-100';
+
+                            return `
+                                <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm flex flex-col justify-between space-y-3 hover:border-slate-300 transition">
+                                    <div class="space-y-2.5">
+                                        <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                                            <span class="text-[11px] text-slate-500 font-extrabold"><i class="fa-regular fa-clock mr-1 text-brand-600"></i>${order.pickupDeliveryTime}</span>
+                                            <div class="flex items-center gap-1">
+                                                <button type="button" onclick="openReceiptModal('${order.id}', 'active')" title="Print or Screenshot Receipt"
+                                                    class="p-1 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition text-[11px] font-bold flex items-center gap-1 px-1.5">
+                                                    <i class="fa-solid fa-receipt"></i>
+                                                    <span>Receipt</span>
+                                                </button>
+                                                <button type="button" onclick="openEditModal('${order.id}')" title="Modify Order"
+                                                    class="p-1 rounded-lg bg-slate-100 text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition text-xs">
+                                                    <i class="fa-solid fa-pen"></i>
+                                                </button>
+                                                <button type="button" onclick="promptDeleteSingleActiveOrder('${order.id}')" title="Delete Order"
+                                                    class="p-1 rounded-lg bg-slate-100 text-slate-500 hover:bg-rose-50 hover:text-rose-600 transition text-xs">
+                                                    <i class="fa-solid fa-trash-can"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div>
+                                                <h4 class="font-extrabold text-slate-900 text-base leading-snug">${order.customerName}</h4>
+                                                ${phoneHtml}
+                                            </div>
+                                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-extrabold border ${typeBadgeClass} shrink-0">
+                                                <i class="fa-solid ${typeIconClass} mr-1"></i>${order.orderType || 'Pick-up'}
+                                            </span>
+                                        </div>
+
+                                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                                            <div>
+                                                <span class="font-extrabold text-slate-700 block text-xs">${order.paymentMethod || 'GCASH'}</span>
+                                                <span class="text-[10px] font-semibold text-slate-400">Payment</span>
+                                            </div>
+                                            <button type="button" onclick="togglePaymentStatus('${order.id}', '${nextPaymentStatus}')"
+                                                class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold border transition flex items-center gap-1 ${paymentBtnClass}">
+                                                <i class="fa-solid ${paymentIconClass}"></i>
+                                                <span>${order.paymentStatus || 'Unpaid'}</span>
+                                            </button>
+                                        </div>
+
+                                        ${notesHtml}
+
+                                        <div class="border-t border-b border-slate-100 py-2.5 space-y-1.5 bg-slate-50/50 px-2 rounded-xl">
+                                            ${itemsHtml}
+                                            ${transFeeHtml}
+                                        </div>
+                                    </div>
+
+                                    <div class="space-y-2 pt-1">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-[10px] font-bold text-slate-400 uppercase">Total</span>
+                                            <span class="text-base font-black text-brand-600">₱${order.totalPrice.toFixed(2)}</span>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-0.5">Order Status</label>
+                                            <select onchange="updateOrderStatus('${order.id}', this.value)" 
+                                                class="w-full px-2.5 py-1.5 rounded-xl text-xs font-bold border ${currentStatusColor} outline-none cursor-pointer">
+                                                <option value="Preparing" ${order.status === 'Preparing' ? 'selected' : ''}>Preparing</option>
+                                                <option value="For Pick-up" ${order.status === 'For Pick-up' ? 'selected' : ''}>For Pick-up</option>
+                                                <option value="For Delivery" ${order.status === 'For Delivery' ? 'selected' : ''}>For Delivery</option>
+                                                <option value="Delivered/Completed" ${order.status === 'Delivered/Completed' ? 'selected' : ''}>Delivered/Completed</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+
+                        return `
+                            <div class="space-y-2.5">
+                                <div class="flex items-center gap-2 bg-slate-100/90 px-3 py-1.5 rounded-xl border border-slate-200/80 w-fit">
+                                    <i class="fa-regular fa-clock text-brand-600 text-xs"></i>
+                                    <span class="text-xs font-extrabold text-slate-800">${timeSlot}</span>
+                                    <span class="bg-slate-700 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full">${ordersInSlot.length}</span>
+                                </div>
+                                <div class="space-y-3">
+                                    ${cardsHtml}
+                                </div>
+                            </div>
+                        `;
+                    }).join('<div class="my-4 border-t border-slate-100"></div>');
+                }
+
+                return `
+                    <div class="bg-white rounded-3xl p-5 border-2 ${cfg.containerBorder} space-y-4 flex flex-col">
+                        <!-- Status Box Header -->
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl border ${cfg.headerBg}">
+                            <div class="flex items-center gap-2.5">
+                                <i class="fa-solid ${cfg.icon} text-lg"></i>
+                                <h3 class="font-extrabold text-sm tracking-tight">${cfg.title}</h3>
+                            </div>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-black ${cfg.badgeBg}">
+                                ${ordersInStatus.length}
+                            </span>
+                        </div>
+
+                        <!-- Box Body Content -->
+                        <div class="space-y-4 flex-1">
+                            ${bodyContent}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            feed.innerHTML = `<div class="${gridColsClass}">${boxesHtml}</div>`;
+        }
+
+        // Remove All Live Orders
+        function promptRemoveAllOrders() {
+            showModal(
+                "Clear Live Orders?",
+                "Are you sure you want to clear all current active orders? This will remove them from the manager board.",
+                async () => {
+                    if (isFirebaseAvailable && db) {
+                        for (let order of activeOrders) {
+                            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', order.id));
+                        }
+                    } else {
+                        activeOrders = [];
+                        localStorage.removeItem(LOCAL_ORDERS_KEY);
+                        renderOrdersFeed();
+                    }
+                    showToast("Live orders board cleared.", "info");
+                }
+            );
+        }
+        window.promptRemoveAllOrders = promptRemoveAllOrders;
+
+        // Manual & Daily Automated Midnight Archiving
+        function triggerManualDailyArchive() {
+            const today = getFormattedDate(new Date());
+            archiveDayOrders(today);
+            showToast("Today's orders saved and archived successfully!", "success");
+        }
+        window.triggerManualDailyArchive = triggerManualDailyArchive;
+
+        async function archiveDayOrders(targetDate) {
+            if (activeOrders.length === 0) {
+                showToast("No live orders to archive.", "info");
+                return;
+            }
+
+            const existingReport = archivedReports[targetDate] || { orders: [], expenses: [] };
+            const combinedOrders = [...existingReport.orders, ...activeOrders];
+
+            const updatedReport = {
+                date: targetDate,
+                orders: combinedOrders,
+                expenses: existingReport.expenses || [],
+                lastUpdated: Date.now()
+            };
+
+            if (isFirebaseAvailable && db) {
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', targetDate), updatedReport);
+                    for (let order of activeOrders) {
+                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', order.id));
+                    }
+                } catch(e) {
+                    console.error("Archive error:", e);
+                }
+            } else {
+                archivedReports[targetDate] = updatedReport;
+                localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                activeOrders = [];
+                localStorage.removeItem(LOCAL_ORDERS_KEY);
+                renderOrdersFeed();
+            }
+        }
+
+        async function checkAndRunMidnightReset() {
+            const lastResetDate = localStorage.getItem('salad_actually_last_reset_date');
+            const today = getFormattedDate(new Date());
+
+            if (!lastResetDate) {
+                localStorage.setItem('salad_actually_last_reset_date', today);
+                return;
+            }
+
+            if (lastResetDate !== today) {
+                console.log("Midnight detected. Archiving previous day's orders...");
+                if (activeOrders.length > 0) {
+                    await archiveDayOrders(lastResetDate);
+                }
+                localStorage.setItem('salad_actually_last_reset_date', today);
+                showToast("Daily automated reset executed.", "info");
+            }
+        }
+
+        function loadSelectedDateReport() {
+            const picker = document.getElementById('report-date-picker');
+            selectedDate = picker ? picker.value : getFormattedDate(new Date());
+
+            const report = archivedReports[selectedDate] || { orders: [], expenses: [] };
+
+            const gross = report.orders.reduce((acc, order) => {
+                return order.status !== 'Cancelled' ? acc + (order.totalPrice || 0) : acc;
+            }, 0);
+
+            const totalExpenses = (report.expenses || []).reduce((acc, exp) => acc + (parseFloat(exp.amount) || 0), 0);
+            const netProfit = gross - totalExpenses;
+            const tithes = Math.max(0, netProfit * 0.10);
+
+            document.getElementById('stat-gross').innerText = '₱' + gross.toFixed(2);
+            document.getElementById('stat-expenses').innerText = '₱' + totalExpenses.toFixed(2);
+            document.getElementById('stat-net').innerText = '₱' + netProfit.toFixed(2);
+            document.getElementById('stat-tithes').innerText = '₱' + tithes.toFixed(2);
+            document.getElementById('stat-orders-count').innerText = report.orders.length;
+
+            computeWeeklyAndMonthlyReports(selectedDate);
+            renderExpensesList(report.expenses || []);
+            renderArchivedOrdersList(report.orders || []);
+        }
+        window.loadSelectedDateReport = loadSelectedDateReport;
+
+        function computeWeeklyAndMonthlyReports(targetDateStr) {
+            const current = new Date(targetDateStr + 'T00:00:00');
+            
+            const dayOfWeek = current.getDay();
+            const startOfWeek = new Date(current);
+            startOfWeek.setDate(current.getDate() - dayOfWeek);
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+
+            const year = current.getFullYear();
+            const month = current.getMonth();
+            const startOfMonth = new Date(year, month, 1);
+            const endOfMonth = new Date(year, month + 1, 0);
+
+            let wGross = 0, wExpenses = 0, wOrdersCount = 0;
+            let mGross = 0, mExpenses = 0, mOrdersCount = 0;
+
+            Object.keys(archivedReports).forEach(dateKey => {
+                const rDate = new Date(dateKey + 'T00:00:00');
+                const rep = archivedReports[dateKey];
+                if (!rep) return;
+
+                const dayOrders = rep.orders || [];
+                const dayGross = dayOrders.reduce((sum, o) => o.status !== 'Cancelled' ? sum + (o.totalPrice || 0) : sum, 0);
+                const dayExp = (rep.expenses || []).reduce((sum, e) => sum + (parseFloat(e.amount) || 0), 0);
+
+                if (rDate >= startOfWeek && rDate <= endOfWeek) {
+                    wGross += dayGross;
+                    wExpenses += dayExp;
+                    wOrdersCount += dayOrders.length;
+                }
+
+                if (rDate >= startOfMonth && rDate <= endOfMonth) {
+                    mGross += dayGross;
+                    mExpenses += dayExp;
+                    mOrdersCount += dayOrders.length;
+                }
+            });
+
+            const wNet = wGross - wExpenses;
+            const wTithes = Math.max(0, wNet * 0.10);
+
+            const mNet = mGross - mExpenses;
+            const mTithes = Math.max(0, mNet * 0.10);
+
+            document.getElementById('weekly-range-label').innerText = getFormattedDate(startOfWeek) + ' to ' + getFormattedDate(endOfWeek);
+            document.getElementById('weekly-gross').innerText = '₱' + wGross.toFixed(2);
+            document.getElementById('weekly-expenses').innerText = '₱' + wExpenses.toFixed(2);
+            document.getElementById('weekly-net').innerText = '₱' + wNet.toFixed(2);
+            document.getElementById('weekly-tithes').innerText = '₱' + wTithes.toFixed(2);
+            document.getElementById('weekly-orders').innerText = wOrdersCount;
+
+            document.getElementById('monthly-range-label').innerText = current.toLocaleString('default', { month: 'long', year: 'numeric' });
+            document.getElementById('monthly-gross').innerText = '₱' + mGross.toFixed(2);
+            document.getElementById('monthly-expenses').innerText = '₱' + mExpenses.toFixed(2);
+            document.getElementById('monthly-net').innerText = '₱' + mNet.toFixed(2);
+            document.getElementById('monthly-tithes').innerText = '₱' + mTithes.toFixed(2);
+            document.getElementById('monthly-orders').innerText = mOrdersCount;
+        }
+
+        function renderExpensesList(expenses) {
+            const container = document.getElementById('expenses-list');
+            if (!expenses || expenses.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 text-xs font-semibold">
+                        No expenses logged for this date.
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = expenses.map((exp, index) => `
+                <div class="flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 text-xs">
+                    <div>
+                        <span class="font-extrabold text-slate-800">${exp.description}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-black text-rose-600">₱${parseFloat(exp.amount).toFixed(2)}</span>
+                        <button type="button" onclick="deleteExpenseEntry(${index})" class="text-slate-400 hover:text-rose-600 transition">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderArchivedOrdersList(orders) {
+            const container = document.getElementById('archived-orders-list');
+            if (!orders || orders.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-slate-400">
+                        <i class="fa-solid fa-box-open text-3xl mb-2 opacity-50 block"></i>
+                        <p class="text-sm font-medium">No archived orders for this date.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = orders.map((order, index) => {
+                const targetKey = order.id || order.customerName;
+                const paymentBadgeClass = order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700';
+                const statusBadgeClass = 'bg-emerald-100 text-emerald-700';
+                const itemsListText = (order.items || []).map(i => i.quantity + 'x ' + i.name).join(', ');
+                const transFeeHtml = order.transportationFee
+                    ? '<span class="block text-slate-400 text-[11px] mt-0.5">Trans Fee: ₱' + order.transportationFee.toFixed(2) + '</span>'
+                    : '';
+                const totalFormatted = (order.totalPrice || 0).toFixed(2);
+
+                return `
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-2 text-xs">
+                    <div class="flex justify-between items-center font-bold">
+                        <span class="text-brand-700 font-extrabold text-sm">${order.customerName} (${order.orderType || 'Pick-up'})</span>
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-full text-[10px] ${paymentBadgeClass}">
+                                ${order.paymentStatus || 'Unpaid'}
+                            </span>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] ${statusBadgeClass}">
+                                ${order.status}
+                            </span>
+                            <button type="button" onclick="openReceiptModal('${targetKey}', 'archive')" title="Print or Screenshot Receipt"
+                                class="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition text-xs flex items-center gap-1 font-extrabold">
+                                <i class="fa-solid fa-receipt"></i>
+                            </button>
+                            <button type="button" onclick="promptDeleteArchivedOrder(${index})" title="Delete Archived Order"
+                                class="p-1 rounded-lg bg-white border border-slate-200 text-slate-400 hover:text-rose-600 hover:border-rose-200 transition text-xs">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-slate-500">
+                        ${itemsListText}
+                        ${transFeeHtml}
+                    </div>
+                    <div class="flex justify-between items-center pt-1 border-t border-slate-200/60 font-black text-slate-900">
+                        <span>Total:</span>
+                        <span>₱${totalFormatted}</span>
+                    </div>
+                </div>
+            `;
+            }).join('');
+        }
+
+        // Delete Archived Order Functionality
+        function promptDeleteArchivedOrder(index) {
+            showModal(
+                "Delete Archived Order?",
+                "Are you sure you want to remove this order from archives? Sales, Net Income, and Tithes will be recalculated.",
+                async () => {
+                    const currentReport = archivedReports[selectedDate];
+                    if (!currentReport || !currentReport.orders) return;
+
+                    currentReport.orders.splice(index, 1);
+
+                    if (isFirebaseAvailable && db) {
+                        try {
+                            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
+                        } catch(e) {
+                            console.error("Archived order delete error:", e);
+                        }
+                    } else {
+                        archivedReports[selectedDate] = currentReport;
+                        localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                        loadSelectedDateReport();
+                    }
+
+                    showToast("Archived order deleted & figures updated.", "info");
+                }
+            );
+        }
+        window.promptDeleteArchivedOrder = promptDeleteArchivedOrder;
+
+        function handleAddExpense(event) {
+            event.preventDefault();
+            const desc = document.getElementById('expense-desc').value.trim();
+            const amount = parseFloat(document.getElementById('expense-amount').value);
+
+            if (!desc || isNaN(amount) || amount < 0) {
+                showToast("Please provide valid expense description and amount.", "error");
+                return;
+            }
+
+            const currentReport = archivedReports[selectedDate] || {
+                date: selectedDate,
+                orders: [],
+                expenses: [],
+                lastUpdated: Date.now()
+            };
+
+            currentReport.expenses = currentReport.expenses || [];
+            currentReport.expenses.push({ description: desc, amount: amount, timestamp: Date.now() });
+
+            if (isFirebaseAvailable && db) {
+                try {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
+                } catch(e) {
+                    console.error("Expense save error:", e);
+                }
+            } else {
+                archivedReports[selectedDate] = currentReport;
+                localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                loadSelectedDateReport();
+            }
+
+            document.getElementById('expense-form').reset();
+            showToast("Expense logged successfully!", "success");
+        }
+        window.handleAddExpense = handleAddExpense;
+
+        function deleteExpenseEntry(index) {
+            const currentReport = archivedReports[selectedDate];
+            if (!currentReport || !currentReport.expenses) return;
+
+            currentReport.expenses.splice(index, 1);
+
+            if (isFirebaseAvailable && db) {
+                try {
+                    setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), currentReport);
+                } catch(e) {
+                    console.error("Expense delete error:", e);
+                }
+            } else {
+                archivedReports[selectedDate] = currentReport;
+                localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                loadSelectedDateReport();
+            }
+
+            showToast("Expense entry deleted.", "info");
+        }
+        window.deleteExpenseEntry = deleteExpenseEntry;
+
+        // UI Helpers
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMessage.innerText = message;
+            
+            if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-xl";
+            } else if (type === 'info') {
+                toastIcon.className = "fa-solid fa-circle-info text-blue-400 text-xl";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-xl";
+            }
+
+            toast.classList.remove('translate-y-[-150%]', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-[-150%]', 'opacity-0');
+            }, 3000);
+        }
+
+        let pendingModalAction = null;
+        function showModal(title, desc, confirmCallback) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-desc').innerText = desc;
+            pendingModalAction = confirmCallback;
+
+            document.getElementById('modal-container').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('modal-container').classList.add('hidden');
+            pendingModalAction = null;
+        }
+        window.closeModal = closeModal;
+
+        document.getElementById('modal-confirm-btn').addEventListener('click', async () => {
+            if (pendingModalAction) await pendingModalAction();
+            closeModal();
+        });
+
+        // Initialize App
+        renderMenu();
+        const datePicker = document.getElementById('report-date-picker');
+        if (datePicker) datePicker.value = selectedDate;
+
+        setupDataListeners();
+        checkAndRunMidnightReset();
+        setInterval(checkAndRunMidnightReset, 30000);
+    </script>
+</body>
+</html>
