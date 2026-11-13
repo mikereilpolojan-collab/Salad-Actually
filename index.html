@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salad, Actually - Order & Management System</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- html2canvas for taking receipt image screenshots -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            200: '#a7f3d0',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 20px -4px rgba(0, 0, 0, 0.05)',
+                        'float': '0 10px 30px -5px rgba(0, 0, 0, 0.08)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #F8FAFC; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media print {
+            body * { visibility: hidden !important; }
+            #receipt-print-area, #receipt-print-area * { visibility: visible !important; }
+            #receipt-print-area { position: absolute !important; left: 0 !important; top: 0 !important; width: 100% !important; margin: 0 !important; padding: 10px !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center h-auto sm:h-20 py-3 sm:py-0 gap-3">
+                <!-- Logo & Brand -->
+                <div class="flex items-center gap-3 shrink-0">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xl shadow-lg shadow-brand-600/20">
+                        <i class="fa-solid fa-leaf"></i>
+                    </div>
+                    <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                        Salad, <span class="text-brand-600">Actually</span>
+                    </h1>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex space-x-2 overflow-x-auto hide-scrollbar bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/50">
+                    <button id="nav-order-btn" onclick="switchTab('order-tab')" class="tab-btn px-4 py-2 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 bg-white text-brand-700 shadow-soft shrink-0">
+                        <i class="fa-solid fa-utensils"></i> Order Form
+                    </button>
+                    <button id="nav-manager-btn" onclick="switchTab('manager-tab')" class="tab-btn px-4 py-2 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition-all duration-300 flex items-center gap-2 relative shrink-0">
+                        <i class="fa-solid fa-list-check"></i> Orders Manager
+                        <span id="active-badge" class="bg-brand-500 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full hidden">0</span>
+                    </button>
+                    <button id="nav-reports-btn" onclick="switchTab('reports-tab')" class="tab-btn px-4 py-2 rounded-xl font-bold text-sm text-slate-500 hover:text-slate-800 transition-all duration-300 flex items-center gap-2 shrink-0">
+                        <i class="fa-solid fa-chart-line"></i> Daily Reports
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+
+        <!-- TAB 1: ORDER FORM -->
+        <section id="order-tab" class="tab-content grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Menu Selection -->
+            <div class="lg:col-span-7 space-y-6">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Select Menu Items</h2>
+                    <p class="text-slate-500 text-sm mt-1">Build your customer's order by selecting from the categories below.</p>
+                </div>
+                <!-- Menu Grid Injected by JS -->
+                <div id="menu-container" class="space-y-8"></div>
+            </div>
+
+            <!-- Right: Total Order & Customer Details -->
+            <div class="lg:col-span-5 space-y-6">
+                <div class="bg-white rounded-3xl p-6 shadow-soft border border-slate-100 space-y-6 sticky top-28">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                        <h3 class="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-basket-shopping text-brand-600"></i>
+                            Order Summary
+                        </h3>
+                        <button type="button" onclick="clearCart()" class="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors">
+                            Clear Cart
+                        </button>
+                    </div>
+
+                    <!-- Cart Item List -->
+                    <div id="cart-list" class="space-y-3 max-h-[30vh] overflow-y-auto pr-2 divide-y divide-slate-50">
+                        <div class="text-center py-8 text-slate-400">
+                            <i class="fa-solid fa-cart-shopping text-3xl mb-3 block opacity-20"></i>
+                            <p class="text-sm font-medium">Your cart is empty.</p>
+                        </div>
+                    </div>
+
+                    <!-- Totals -->
+                    <div class="bg-slate-50 rounded-2xl p-4 space-y-3 border border-slate-100">
+                        <div class="flex justify-between text-sm text-slate-500 font-semibold">
+                            <span>Subtotal</span>
+                            <span id="cart-subtotal" class="text-slate-700">₱0.00</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm font-semibold gap-2">
+                            <label for="transport-fee" class="text-slate-500">Transport Fee (₱)</label>
+                            <input type="number" id="transport-fee" min="0" step="1" value="0" oninput="updateCartTotals()"
+                                class="w-24 px-3 py-1.5 text-right text-sm bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none font-bold text-slate-800 transition-all">
+                        </div>
+                        <div class="flex justify-between text-xl font-extrabold text-slate-900 pt-3 border-t border-slate-200">
+                            <span>Total</span>
+                            <span id="cart-total" class="text-brand-600">₱0.00</span>
+                        </div>
+                    </div>
+
+                    <!-- Customer Details Form -->
+                    <form id="order-form" onsubmit="handleSaveOrder(event)" class="space-y-5">
+                        
+                        <!-- Order Schedule Configuration -->
+                        <div class="space-y-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <label class="block text-xs font-extrabold text-slate-400 uppercase tracking-wider mb-2">Order Schedule *</label>
+                            <div class="flex gap-6">
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" id="cb-today" onclick="toggleSchedule('today')" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 transition cursor-pointer">
+                                    <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">Today</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer group">
+                                    <input type="checkbox" id="cb-advance" onclick="toggleSchedule('advance')" class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500 transition cursor-pointer">
+                                    <span class="text-sm font-bold text-slate-700 group-hover:text-brand-600 transition">Advance Day Reservation</span>
+                                </label>
+                            </div>
+
+                            <div id="schedule-fields" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-slate-50 mt-3">
+                                <div id="date-container" class="hidden">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Reservation Date *</label>
+                                    <input type="date" id="cust-date" class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-semibold text-slate-800">
+                                </div>
+                                <div id="time-container" class="col-span-1">
+                                    <label class="block text-xs font-bold text-slate-600 mb-1.5">Delivery/Pick-up Time *</label>
+                                    <select id="cust-time" class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all font-semibold text-slate-800">
+                                        <option value="">Select Time...</option>
+                                        <!-- Options populated via JS -->
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1.5">Customer Name *</label>
+                                <input type="text" id="cust-name" required placeholder="e.g. Maria Clara"
+                                    class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1.5">Contact Number</label>
+                                <input type="tel" id="cust-phone" placeholder="09XX XXX XXXX"
+                                    class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1.5">Order Type *</label>
+                                <select id="cust-order-type" required
+                                    class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700 transition-all">
+                                    <option value="Pick-up">Pick-up</option>
+                                    <option value="Delivery">Delivery</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1.5">Payment Method *</label>
+                                <select id="cust-payment-method" required
+                                    class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700 transition-all">
+                                    <option value="GCASH">GCASH Payment</option>
+                                    <option value="Cash On Delivery">Cash On Delivery</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1.5">Payment Status *</label>
+                            <select id="cust-payment-status" required
+                                class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none font-semibold text-slate-700 transition-all">
+                                <option value="Unpaid">Unpaid</option>
+                                <option value="Paid">Paid</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1.5">Notes / Address</label>
+                            <textarea id="cust-notes" rows="2" placeholder="Specific notes or complete delivery address..."
+                                class="w-full px-4 py-2.5 text-base sm:text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all resize-none"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 px-4 bg-brand-600 hover:bg-brand-700 text-white font-extrabold text-sm rounded-2xl shadow-float transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-check"></i>
+                            Confirm & Save Order
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: ORDERS MANAGER -->
+        <section id="manager-tab" class="tab-content hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-soft">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Active Orders Manager</h2>
+                    <p class="text-slate-500 text-sm mt-1">Manage live order statuses grouped chronologically by delivery time.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" onclick="triggerManualDailyArchive()" class="px-5 py-2.5 bg-brand-50 text-brand-700 hover:bg-brand-100 hover:shadow-sm font-bold text-sm rounded-xl transition-all duration-300 flex items-center gap-2">
+                        <i class="fa-solid fa-box-archive"></i> Archive Today's Orders
+                    </button>
+                    <button type="button" onclick="promptRemoveAllOrders()" class="px-5 py-2.5 bg-rose-50 text-rose-600 hover:bg-rose-100 hover:shadow-sm font-bold text-sm rounded-xl transition-all duration-300 flex items-center gap-2">
+                        <i class="fa-solid fa-trash-can"></i> Clear All Live
+                    </button>
+                </div>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div class="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-2" id="filter-bar">
+                <button type="button" onclick="setFilter('All')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white shadow-md transition-all shrink-0">All</button>
+                <button type="button" onclick="setFilter('Preparing')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0">Preparing (Today)</button>
+                <button type="button" onclick="setFilter('Advance Day Reservation')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0">Advance Reservations</button>
+                <button type="button" onclick="setFilter('For Pick-up')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0">For Pick-up</button>
+                <button type="button" onclick="setFilter('For Delivery')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0">For Delivery</button>
+                <button type="button" onclick="setFilter('Delivered/Completed')" class="filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0">Delivered/Completed</button>
+            </div>
+
+            <div id="orders-feed" class="space-y-10 mt-4">
+                <!-- Orders inject here -->
+            </div>
+        </section>
+
+        <!-- TAB 3: DAILY REPORTS & EXPENSES -->
+        <section id="reports-tab" class="tab-content hidden space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-soft">
+                <div>
+                    <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Sales & Expense Reports</h2>
+                    <p class="text-slate-500 text-sm mt-1">Review historical order archives and compute net income.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-wider">Select Date</label>
+                    <input type="date" id="report-date-picker" onchange="loadSelectedDateReport()" 
+                        class="px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-brand-500 shadow-sm cursor-pointer hover:bg-white transition-all">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Gross Sales</span>
+                        <div class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500"><i class="fa-solid fa-sack-dollar"></i></div>
+                    </div>
+                    <div id="stat-gross" class="text-3xl font-black text-slate-900">₱0.00</div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Total Expenses</span>
+                        <div class="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-rose-500"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                    </div>
+                    <div id="stat-expenses" class="text-3xl font-black text-rose-600">₱0.00</div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Net Income</span>
+                        <div class="w-8 h-8 rounded-full bg-brand-50 flex items-center justify-center text-brand-600"><i class="fa-solid fa-chart-pie"></i></div>
+                    </div>
+                    <div id="stat-net" class="text-3xl font-black text-brand-600">₱0.00</div>
+                </div>
+
+                <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft hover:-translate-y-1 transition-transform duration-300">
+                    <div class="flex items-center justify-between text-slate-400 mb-2">
+                        <span class="text-xs font-extrabold uppercase tracking-wider">Total Orders</span>
+                        <div class="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-500"><i class="fa-solid fa-box"></i></div>
+                    </div>
+                    <div id="stat-orders-count" class="text-3xl font-black text-slate-900">0</div>
+                </div>
+            </div>
+
+            <!-- Weekly and Monthly Summaries -->
+            <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft space-y-5">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-brand-600"></i>
+                    Period Overviews
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Weekly Box -->
+                    <div class="p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Week</span>
+                            <span id="weekly-range-label" class="text-xs font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 text-center">
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="weekly-gross" class="text-sm font-black text-slate-900 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="weekly-expenses" class="text-sm font-black text-rose-600 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-brand-600">Net</p>
+                                <p id="weekly-net" class="text-sm font-black text-brand-700 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="weekly-orders" class="text-sm font-black text-slate-900 mt-0.5">0</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Monthly Box -->
+                    <div class="p-5 bg-slate-50 border border-slate-100 rounded-2xl">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500">This Month</span>
+                            <span id="monthly-range-label" class="text-xs font-bold text-slate-400">--</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3 text-center">
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Gross</p>
+                                <p id="monthly-gross" class="text-sm font-black text-slate-900 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+                                <p id="monthly-expenses" class="text-sm font-black text-rose-600 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-brand-600">Net</p>
+                                <p id="monthly-net" class="text-sm font-black text-brand-700 mt-0.5">₱0.00</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-xl shadow-sm border border-slate-50">
+                                <p class="text-[10px] uppercase font-bold text-blue-500">Orders</p>
+                                <p id="monthly-orders" class="text-sm font-black text-slate-900 mt-0.5">0</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout: Expenses & Archives -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <!-- Left: Daily Expenses Log -->
+                <div class="lg:col-span-5">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft h-full flex flex-col">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2 mb-1">
+                            <i class="fa-solid fa-receipt text-rose-500"></i> Daily Expenses
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Log costs for the selected date to deduce Net Income.</p>
+
+                        <form id="expense-form" onsubmit="handleAddExpense(event)" class="space-y-3 mb-5">
+                            <input type="text" id="expense-desc" required placeholder="Description (e.g. Fresh Greens)"
+                                class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                            <div class="flex gap-2">
+                                <input type="number" id="expense-amount" step="0.01" min="0" required placeholder="Amount ₱"
+                                    class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 outline-none transition-all">
+                                <button type="submit" class="px-5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-md transition-all shrink-0">
+                                    Add
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="flex-1 border-t border-slate-100 pt-4 overflow-hidden flex flex-col">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-3">Expense List</h4>
+                            <div id="expenses-list" class="space-y-2 overflow-y-auto pr-1 flex-1 min-h-[150px]"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Archived Orders Breakdown -->
+                <div class="lg:col-span-7">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-soft h-full flex flex-col">
+                        <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2 mb-4">
+                            <i class="fa-solid fa-folder-open text-brand-600"></i> Archived Orders Log
+                        </h3>
+                        <div id="archived-orders-list" class="space-y-3 overflow-y-auto pr-1 flex-1 min-h-[300px]"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- UI Overlays (Toasts, Modals, Receipts) -->
+    <!-- Toast -->
+    <div id="toast" class="fixed top-6 right-6 z-50 transform translate-y-[-150%] opacity-0 transition-all duration-400 ease-out max-w-sm bg-slate-900 text-white px-5 py-4 rounded-2xl shadow-float flex items-center gap-3">
+        <i id="toast-icon" class="fa-solid fa-circle-check text-brand-400 text-xl"></i>
+        <span id="toast-message" class="text-sm font-semibold">Notification</span>
+    </div>
+
+    <!-- Generic Confirm Modal -->
+    <div id="modal-container" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 transition-opacity">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-float space-y-4">
+            <div class="w-12 h-12 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center text-xl mb-2">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+                <h3 id="modal-title" class="text-xl font-extrabold text-slate-900">Are you sure?</h3>
+                <p id="modal-desc" class="text-slate-500 text-sm mt-1 leading-relaxed">This action cannot be undone.</p>
+            </div>
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeModal()" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold rounded-xl transition-colors">Cancel</button>
+                <button id="modal-confirm-btn" type="button" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-sm font-bold rounded-xl transition-all shadow-md">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Order Modal Container -->
+    <div id="edit-modal-container" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-float space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-2">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-brand-600"></i> Modify Order
+                </h3>
+                <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <form id="edit-order-form" onsubmit="handleSaveEditedOrder(event)" class="space-y-4">
+                <input type="hidden" id="edit-order-id">
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Customer Name</label>
+                        <input type="text" id="edit-cust-name" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Contact Number</label>
+                        <input type="tel" id="edit-cust-phone" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Order Type</label>
+                        <select id="edit-order-type" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 outline-none">
+                            <option value="Pick-up">Pick-up</option>
+                            <option value="Delivery">Delivery</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Date/Time Details</label>
+                        <input type="text" id="edit-cust-time" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Payment Method</label>
+                        <select id="edit-payment-method" required class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl font-semibold text-slate-700 outline-none">
+                            <option value="GCASH">GCASH</option>
+                            <option value="Cash On Delivery">Cash On Delivery</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Transport Fee (₱)</label>
+                        <input type="number" id="edit-transport-fee" min="0" step="1" oninput="recalculateEditTotal()" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Notes / Address</label>
+                    <textarea id="edit-cust-notes" rows="2" class="w-full px-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none resize-none"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Edit Items</label>
+                    <div id="edit-menu-items" class="space-y-2 max-h-48 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-sm font-bold text-slate-500">New Total</span>
+                    <span id="edit-total-preview" class="text-xl font-black text-brand-600">₱0.00</span>
+                </div>
+
+                <button type="submit" class="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-sm rounded-xl shadow-md transition-all mt-2">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Receipt Container -->
+    <div id="receipt-modal-container" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-float space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center pb-2">
+                <h3 class="text-lg font-extrabold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-receipt text-brand-600"></i> Thermal Receipt
+                </h3>
+                <button type="button" onclick="closeReceiptModal()" class="text-slate-400 hover:text-slate-700 transition">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <div id="receipt-print-area" class="bg-white text-slate-900 font-mono text-xs p-5 rounded-2xl border border-slate-200 shadow-inner">
+                <div class="text-center space-y-1 mb-4">
+                    <div class="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center text-lg mx-auto mb-2"><i class="fa-solid fa-leaf"></i></div>
+                    <h2 class="font-extrabold text-base uppercase tracking-wider">Salad, Actually</h2>
+                    <p class="text-[10px] text-slate-500">Fresh. Healthy. Delicious.</p>
+                </div>
+                <div class="border-b border-dashed border-slate-300 my-3"></div>
+
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Date:</span> <span id="rec-date" class="font-bold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Customer:</span> <span id="rec-name" class="font-extrabold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Order Type:</span> <span id="rec-type" class="font-bold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Payment:</span> <span id="rec-payment" class="font-bold">--</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Delivery Time:</span> <span id="rec-time" class="font-extrabold text-brand-700">--</span></div>
+                </div>
+
+                <div class="border-b border-dashed border-slate-300 my-3"></div>
+                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Order Breakdown</p>
+                <div id="rec-items-list" class="space-y-1 text-[11px] font-sans"></div>
+                
+                <div class="border-b border-dashed border-slate-300 my-3"></div>
+                <div class="space-y-1 text-[11px] font-sans">
+                    <div class="flex justify-between"><span class="text-slate-500">Subtotal:</span> <span id="rec-subtotal" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between"><span class="text-slate-500">Transport:</span> <span id="rec-trans" class="font-semibold">₱0.00</span></div>
+                    <div class="flex justify-between text-sm font-black pt-2 mt-2 border-t border-slate-200">
+                        <span>TOTAL:</span> <span id="rec-total">₱0.00</span>
+                    </div>
+                </div>
+                <div class="border-b border-dashed border-slate-300 my-3"></div>
+                <div class="text-center font-sans space-y-1">
+                    <p class="text-[10px] text-slate-500">Thank you!</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 pt-2">
+                <button type="button" onclick="window.print()" class="py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-print"></i> Print
+                </button>
+                <button type="button" onclick="captureReceiptScreenshot()" class="py-3 bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-camera"></i> Save Image
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, deleteDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Firebase State
+        let db = null; let auth = null; let isFirebaseAvailable = false;
+        const appId = 'salad-actually-app';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyA-1LN3pdxUecpHHPj6jU2oJaxCDp7eTdA",
+            authDomain: "salad-actually-1fc68.firebaseapp.com",
+            projectId: "salad-actually-1fc68"
+        };
+
+        try {
+            if (firebaseConfig.projectId) {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app); auth = getAuth(app);
+                isFirebaseAvailable = true;
+            }
+        } catch (e) {
+            console.warn("Firebase fallback to LocalStorage");
+        }
+
+        // Updated Categorized Menu Data
+        const MENU = [
+            { id: 1, name: "Grilled Chicken Salad", price: 170, icon: "fa-leaf", category: "Salads" },
+            { id: 2, name: "Protein-packed Salad", price: 170, icon: "fa-egg", category: "Salads" },
+            { id: 3, name: "Tropical Crunch Salad", price: 150, icon: "fa-apple-whole", category: "Salads" },
+            { id: 14, name: "Mango Kani Salad", price: 150, icon: "fa-leaf", category: "Salads" },
+            
+            { id: 8, name: "Mango Kani Roll", price: 150, icon: "fa-utensils", category: "Rolls & Wraps" },
+            { id: 15, name: "Chicken Veggie Wrap", price: 120, icon: "fa-scroll", category: "Rolls & Wraps" },
+            
+            { id: 6, name: "Chicken Adobo Rice Bowl", price: 110, icon: "fa-bowl-rice", category: "Rice Bowls" },
+            { id: 7, name: "Cajun Salmon Rice Bowl", price: 130, icon: "fa-fish", category: "Rice Bowls" },
+            
+            { id: 4, name: "Peanut Butter Banana", price: 65, icon: "fa-cookie", category: "Snacks & Desserts" },
+            { id: 5, name: "Dragon Fruit Trail Mix", price: 75, icon: "fa-seedling", category: "Snacks & Desserts" },
+            { id: 16, name: "Mango Trail Mix", price: 75, icon: "fa-seedling", category: "Snacks & Desserts" },
+            { id: 11, name: "Mango Sticky", price: 160, icon: "fa-bowl-food", category: "Snacks & Desserts" },
+            
+            { id: 9, name: "Grilled Chicken Salad Food Tray", price: 1250, icon: "fa-boxes-packing", category: "Food Trays" },
+            { id: 10, name: "Mango Kani Roll Food Tray", price: 590, icon: "fa-boxes-packing", category: "Food Trays" }
+        ];
+
+        // State Variables
+        let cart = {}; 
+        let activeOrders = [];
+        let archivedReports = {};
+        let currentFilter = 'All';
+        let selectedDate = getFormattedDate(new Date());
+        let editingCart = {}; 
+        let currentReceiptOrder = null;
+
+        const LOCAL_ORDERS_KEY = 'sa_orders_v2';
+        const LOCAL_REPORTS_KEY = 'sa_reports_v2';
+
+        function getFormattedDate(d) {
+            const date = new Date(d);
+            return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
+        // Navigation & Display Logic
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-white', 'text-brand-700', 'shadow-soft');
+                btn.classList.add('text-slate-500');
+            });
+
+            const activeBtn = document.getElementById('nav-' + tabId.split('-')[0] + '-btn');
+            if (activeBtn) {
+                activeBtn.classList.add('bg-white', 'text-brand-700', 'shadow-soft');
+                activeBtn.classList.remove('text-slate-500');
+            }
+            if (tabId === 'reports-tab') loadSelectedDateReport();
+        };
+
+        // Order Schedule UI Logic
+        window.toggleSchedule = function(type) {
+            const cbToday = document.getElementById('cb-today');
+            const cbAdv = document.getElementById('cb-advance');
+            const fields = document.getElementById('schedule-fields');
+            const dateCont = document.getElementById('date-container');
+
+            if (type === 'today' && cbToday.checked) cbAdv.checked = false;
+            else if (type === 'advance' && cbAdv.checked) cbToday.checked = false;
+
+            if (cbToday.checked || cbAdv.checked) fields.classList.remove('hidden');
+            else fields.classList.add('hidden');
+
+            if (cbAdv.checked) {
+                dateCont.classList.remove('hidden');
+                document.getElementById('cust-date').required = true;
+            } else {
+                dateCont.classList.add('hidden');
+                document.getElementById('cust-date').required = false;
+            }
+        };
+
+        // Populate Time Dropdown
+        function populateTimeDropdown() {
+            const timeSelect = document.getElementById('cust-time');
+            let html = '<option value="">Select Time...</option>';
+            for (let h = 8; h <= 20; h++) {
+                let ampm = h >= 12 ? 'PM' : 'AM';
+                let hr = h > 12 ? h - 12 : (h === 0 ? 12 : h);
+                html += `<option value="${hr}:00 ${ampm}">${hr}:00 ${ampm}</option>`;
+                if (h !== 20) html += `<option value="${hr}:30 ${ampm}">${hr}:30 ${ampm}</option>`;
+            }
+            timeSelect.innerHTML = html;
+        }
+
+        // Render Categorized Menu
+        function renderMenu() {
+            const container = document.getElementById('menu-container');
+            const categories = [...new Set(MENU.map(i => i.category))];
+            
+            let html = '';
+            categories.forEach(cat => {
+                const items = MENU.filter(i => i.category === cat);
+                html += `
+                    <div>
+                        <div class="flex items-center gap-3 mb-4">
+                            <h3 class="text-lg font-extrabold text-slate-800 tracking-tight">${cat}</h3>
+                            <div class="h-px bg-slate-200 flex-1"></div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            ${items.map(item => `
+                                <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-soft hover:-translate-y-1 hover:shadow-md transition-all duration-300 group flex flex-col justify-between">
+                                    <div class="flex justify-between items-start gap-3">
+                                        <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center group-hover:bg-brand-600 group-hover:text-white transition-colors">
+                                            <i class="fa-solid ${item.icon}"></i>
+                                        </div>
+                                        <p class="font-extrabold text-brand-700 text-lg">₱${item.price.toFixed(2)}</p>
+                                    </div>
+                                    <div class="mt-4 mb-5">
+                                        <h4 class="font-extrabold text-slate-900 text-[15px] leading-snug">${item.name}</h4>
+                                    </div>
+                                    <div class="flex items-center justify-between bg-slate-50 p-1.5 rounded-xl border border-slate-100">
+                                        <button type="button" onclick="updateCartQuantity(${item.id}, -1)" class="w-9 h-9 rounded-lg bg-white shadow-sm hover:bg-slate-200 font-bold text-slate-600 transition flex items-center justify-center">
+                                            <i class="fa-solid fa-minus text-xs"></i>
+                                        </button>
+                                        <span id="menu-qty-${item.id}" class="font-extrabold text-sm w-8 text-center text-slate-800">0</span>
+                                        <button type="button" onclick="updateCartQuantity(${item.id}, 1)" class="w-9 h-9 rounded-lg bg-brand-600 hover:bg-brand-700 shadow-sm text-white font-bold transition flex items-center justify-center">
+                                            <i class="fa-solid fa-plus text-xs"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // Cart Actions
+        window.updateCartQuantity = function(id, delta) {
+            cart[id] = Math.max(0, (cart[id] || 0) + delta);
+            if (cart[id] === 0) delete cart[id];
+            const el = document.getElementById(`menu-qty-${id}`);
+            if (el) el.innerText = cart[id] || 0;
+            renderCart();
+        };
+        window.clearCart = function() {
+            cart = {};
+            MENU.forEach(item => { const el = document.getElementById(`menu-qty-${item.id}`); if(el) el.innerText="0"; });
+            document.getElementById('transport-fee').value = 0;
+            renderCart();
+        };
+        window.updateCartTotals = () => renderCart();
+
+        function renderCart() {
+            const list = document.getElementById('cart-list');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const totalEl = document.getElementById('cart-total');
+            const trans = parseFloat(document.getElementById('transport-fee').value) || 0;
+            
+            const ids = Object.keys(cart);
+            if(ids.length === 0) {
+                list.innerHTML = `<div class="text-center py-8 text-slate-400"><i class="fa-solid fa-cart-shopping text-3xl mb-3 block opacity-20"></i><p class="text-sm font-medium">Your cart is empty.</p></div>`;
+                subtotalEl.innerText = "₱0.00"; totalEl.innerText = `₱${trans.toFixed(2)}`;
+                return;
+            }
+
+            let sub = 0;
+            list.innerHTML = ids.map(id => {
+                const item = MENU.find(m => m.id == id);
+                const qty = cart[id];
+                sub += item.price * qty;
+                return `
+                    <div class="flex justify-between items-center py-2.5">
+                        <div><p class="text-sm font-bold text-slate-800">${item.name}</p><p class="text-xs text-slate-400">₱${item.price} x ${qty}</p></div>
+                        <span class="text-sm font-black text-slate-900">₱${(item.price * qty).toFixed(2)}</span>
+                    </div>
+                `;
+            }).join('');
+            subtotalEl.innerText = `₱${sub.toFixed(2)}`; totalEl.innerText = `₱${(sub+trans).toFixed(2)}`;
+        }
+
+        // Save Order logic with Schedule processing
+        window.handleSaveOrder = async function(event) {
+            event.preventDefault();
+            if(Object.keys(cart).length === 0) return showToast("Select items first.", "error");
+
+            const isToday = document.getElementById('cb-today').checked;
+            const isAdvance = document.getElementById('cb-advance').checked;
+            if(!isToday && !isAdvance) return showToast("Please select an Order Schedule.", "error");
+
+            const targetDate = isAdvance ? document.getElementById('cust-date').value : getFormattedDate(new Date());
+            const time = document.getElementById('cust-time').value;
+            if(!time) return showToast("Please select a delivery/pick-up time.", "error");
+
+            const items = Object.keys(cart).map(id => {
+                const i = MENU.find(m => m.id==id);
+                return { id: i.id, name: i.name, price: i.price, quantity: cart[id] };
+            });
+            const trans = parseFloat(document.getElementById('transport-fee').value) || 0;
+            const total = items.reduce((s, i) => s + (i.price*i.quantity), 0) + trans;
+            
+            const newOrder = {
+                id: 'ORD-' + Math.floor(100000 + Math.random()*900000),
+                customerName: document.getElementById('cust-name').value.trim(),
+                contactNumber: document.getElementById('cust-phone').value.trim(),
+                orderType: document.getElementById('cust-order-type').value,
+                paymentMethod: document.getElementById('cust-payment-method').value,
+                paymentStatus: document.getElementById('cust-payment-status').value,
+                notesAddress: document.getElementById('cust-notes').value.trim(),
+                targetDate: targetDate,
+                pickupDeliveryTime: time,
+                status: isAdvance ? 'Reserved' : 'Preparing',
+                transportationFee: trans,
+                items: items,
+                totalPrice: total,
+                timestamp: Date.now()
+            };
+
+            if(isFirebaseAvailable && db) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', newOrder.id), newOrder);
+            else {
+                activeOrders.unshift(newOrder);
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+            }
+
+            showToast("Order Saved!", "success");
+            clearCart(); document.getElementById('order-form').reset();
+            toggleSchedule(''); // reset schedule fields
+            renderOrdersFeed();
+        };
+
+        // Transfer Advance to Today automatically
+        async function runAutoStatusTransfer() {
+            const todayStr = getFormattedDate(new Date());
+            let updated = false;
+
+            for(let o of activeOrders) {
+                if(o.status === 'Reserved' && o.targetDate <= todayStr) {
+                    o.status = 'Preparing';
+                    updated = true;
+                    if(isFirebaseAvailable && db) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', o.id), {status: 'Preparing'});
+                }
+            }
+            if(updated && !isFirebaseAvailable) localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+            if(updated) renderOrdersFeed();
+        }
+
+        // Orders Manager Display (Shown by 2, Strict Separation)
+        window.setFilter = (f) => { currentFilter = f; renderOrdersFeed(); };
+        
+        function renderOrdersFeed() {
+            const badge = document.getElementById('active-badge');
+            badge.innerText = activeOrders.length; badge.classList.toggle('hidden', activeOrders.length===0);
+            
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.innerText.includes(currentFilter) || (currentFilter==='All' && btn.innerText==='All')) {
+                    btn.className = "filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-slate-900 text-white shadow-md transition-all shrink-0";
+                } else {
+                    btn.className = "filter-btn px-5 py-2.5 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 hover:bg-slate-50 hover:text-slate-800 transition-all shrink-0";
+                }
+            });
+
+            const filtered = activeOrders.filter(o => {
+                if(currentFilter === 'All') return true;
+                if(currentFilter === 'Preparing') return o.status === 'Preparing';
+                if(currentFilter === 'Advance Day Reservation') return o.status === 'Reserved';
+                if(currentFilter === 'For Pick-up') return o.status === 'For Pick-up';
+                if(currentFilter === 'For Delivery') return o.status === 'For Delivery';
+                if(currentFilter === 'Delivered/Completed') return o.status === 'Delivered/Completed';
+                return false;
+            });
+
+            const feed = document.getElementById('orders-feed');
+            if(filtered.length === 0) {
+                feed.innerHTML = `<div class="bg-white rounded-3xl p-12 text-center border border-slate-100 shadow-sm"><i class="fa-solid fa-folder-open text-4xl text-slate-200 mb-3 block"></i><h3 class="font-extrabold text-slate-600">No active orders found</h3></div>`;
+                return;
+            }
+
+            const grouped = {};
+            filtered.forEach(o => {
+                const key = o.pickupDeliveryTime || 'Any Time';
+                if(!grouped[key]) grouped[key] = [];
+                grouped[key].push(o);
+            });
+
+            const parseTime = (t) => {
+                const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+                if(!m) return 9999;
+                let h=parseInt(m[1]), min=parseInt(m[2]), ampm=m[3].toUpperCase();
+                if(ampm==='PM'&&h<12) h+=12; if(ampm==='AM'&&h===12) h=0;
+                return h*60+min;
+            };
+            const sortedKeys = Object.keys(grouped).sort((a,b) => parseTime(a)-parseTime(b));
+
+            feed.innerHTML = sortedKeys.map(timeSlot => {
+                const ordersHtml = grouped[timeSlot].map(o => {
+                    const bgStat = o.status==='Reserved'?'bg-sky-50 text-sky-700': o.status==='Delivered/Completed'?'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700';
+                    return `
+                    <div class="bg-white rounded-3xl p-6 border border-slate-100 shadow-soft hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center pb-3 border-b border-slate-50">
+                                <span class="text-xs font-black uppercase tracking-wider ${bgStat} px-2 py-1 rounded-lg">${o.status}</span>
+                                <div class="flex gap-1.5">
+                                    <button onclick="openReceiptModal('${o.id}', 'active')" class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition flex items-center justify-center"><i class="fa-solid fa-receipt text-sm"></i></button>
+                                    <button onclick="openEditModal('${o.id}')" class="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition flex items-center justify-center" title="Modify Order"><i class="fa-solid fa-pen text-sm"></i></button>
+                                    <button onclick="promptDeleteSingleActiveOrder('${o.id}')" class="w-8 h-8 rounded-lg bg-rose-50 text-rose-500 hover:bg-rose-100 transition flex items-center justify-center"><i class="fa-solid fa-trash-can text-sm"></i></button>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h3 class="font-black text-slate-900 text-xl">${o.customerName}</h3>
+                                ${o.targetDate ? `<p class="text-[11px] font-bold text-brand-600 mt-1"><i class="fa-solid fa-calendar-day mr-1"></i>Date: ${o.targetDate}</p>` : ''}
+                            </div>
+                            
+                            <div class="flex gap-2">
+                                <span class="px-2.5 py-1 text-[10px] font-extrabold rounded-lg border bg-slate-50 text-slate-700"><i class="fa-solid ${o.orderType==='Pick-up'?'fa-bag-shopping':'fa-truck'} mr-1"></i>${o.orderType}</span>
+                                <button onclick="togglePaymentStatus('${o.id}', '${o.paymentStatus==='Paid'?'Unpaid':'Paid'}')" class="px-2.5 py-1 text-[10px] font-extrabold rounded-lg border transition ${o.paymentStatus==='Paid'?'bg-emerald-100 text-emerald-800 border-emerald-200':'bg-rose-100 text-rose-800 border-rose-200'}">${o.paymentStatus}</button>
+                            </div>
+
+                            <div class="bg-slate-50 rounded-2xl p-4 space-y-2 border border-slate-100">
+                                ${o.items.map(i => `<div class="flex justify-between text-sm sm:text-base font-extrabold text-slate-800"><span>${i.quantity}x ${i.name}</span><span>₱${(i.price*i.quantity)}</span></div>`).join('')}
+                            </div>
+                        </div>
+
+                        <div class="pt-4 mt-4 border-t border-slate-50 space-y-3">
+                            <div class="flex justify-between items-center"><span class="text-xs font-bold text-slate-400">Total Due</span><span class="text-xl font-black text-brand-600">₱${o.totalPrice.toFixed(2)}</span></div>
+                            <select onchange="updateOrderStatus('${o.id}', this.value)" class="w-full px-4 py-2.5 bg-slate-50 rounded-xl text-sm font-bold border border-slate-200 outline-none text-slate-700 cursor-pointer">
+                                <option value="Reserved" ${o.status==='Reserved'?'selected':''} ${o.status==='Reserved'?'':'hidden'}>Reserved (Advance)</option>
+                                <option value="Preparing" ${o.status==='Preparing'?'selected':''}>Preparing</option>
+                                <option value="For Pick-up" ${o.status==='For Pick-up'?'selected':''}>For Pick-up</option>
+                                <option value="For Delivery" ${o.status==='For Delivery'?'selected':''}>For Delivery</option>
+                                <option value="Delivered/Completed" ${o.status==='Delivered/Completed'?'selected':''}>Delivered/Completed</option>
+                            </select>
+                        </div>
+                    </div>`;
+                }).join('');
+
+                return `
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="px-4 py-2 bg-slate-900 text-white rounded-xl shadow-md text-sm font-extrabold tracking-wide flex items-center gap-2">
+                            <i class="fa-regular fa-clock"></i> ${timeSlot}
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">${ordersHtml}</div>
+                </div>`;
+            }).join('');
+        }
+
+        // Edit Order Logic
+        window.openEditModal = (id) => {
+            const o = activeOrders.find(x => x.id === id);
+            if(!o) return;
+            document.getElementById('edit-order-id').value = o.id;
+            document.getElementById('edit-cust-name').value = o.customerName;
+            document.getElementById('edit-cust-phone').value = o.contactNumber || '';
+            document.getElementById('edit-order-type').value = o.orderType || 'Pick-up';
+            document.getElementById('edit-cust-time').value = o.pickupDeliveryTime || '';
+            document.getElementById('edit-payment-method').value = o.paymentMethod || 'GCASH';
+            document.getElementById('edit-transport-fee').value = o.transportationFee || 0;
+            document.getElementById('edit-cust-notes').value = o.notesAddress || '';
+
+            editingCart = {};
+            o.items.forEach(i => editingCart[i.id] = i.quantity);
+            renderEditMenu();
+            recalculateEditTotal();
+            document.getElementById('edit-modal-container').classList.remove('hidden');
+        };
+
+        window.closeEditModal = () => {
+            document.getElementById('edit-modal-container').classList.add('hidden');
+            editingCart = {};
+        };
+
+        function renderEditMenu() {
+            const container = document.getElementById('edit-menu-items');
+            container.innerHTML = MENU.map(item => {
+                const qty = editingCart[item.id] || 0;
+                return `
+                    <div class="flex items-center justify-between p-2 bg-white rounded-xl border border-slate-100 text-xs">
+                        <div class="font-bold text-slate-800">${item.name} <span class="text-slate-400 font-normal ml-1">(₱${item.price.toFixed(2)})</span></div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" onclick="updateEditCartQty(${item.id}, -1)" class="w-6 h-6 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold flex items-center justify-center">-</button>
+                            <span id="edit-qty-${item.id}" class="font-extrabold w-4 text-center">${qty}</span>
+                            <button type="button" onclick="updateEditCartQty(${item.id}, 1)" class="w-6 h-6 rounded-lg bg-brand-600 hover:bg-brand-700 text-white font-bold flex items-center justify-center">+</button>
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        window.updateEditCartQty = (id, delta) => {
+            editingCart[id] = Math.max(0, (editingCart[id] || 0) + delta);
+            if(editingCart[id] === 0) delete editingCart[id];
+            const el = document.getElementById(`edit-qty-${id}`);
+            if(el) el.innerText = editingCart[id] || 0;
+            recalculateEditTotal();
+        };
+
+        window.recalculateEditTotal = () => {
+            let sub = 0;
+            Object.keys(editingCart).forEach(id => {
+                const item = MENU.find(m => m.id == id);
+                if(item) sub += item.price * editingCart[id];
+            });
+            const trans = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+            document.getElementById('edit-total-preview').innerText = `₱${(sub + trans).toFixed(2)}`;
+        };
+
+        window.handleSaveEditedOrder = async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit-order-id').value;
+            if(Object.keys(editingCart).length === 0) return showToast("Order must have at least one item.", "error");
+
+            const items = Object.keys(editingCart).map(itemId => {
+                const item = MENU.find(m => m.id == itemId);
+                return { id: item.id, name: item.name, price: item.price, quantity: editingCart[itemId] };
+            });
+            const trans = parseFloat(document.getElementById('edit-transport-fee').value) || 0;
+            const total = items.reduce((s, i) => s + (i.price * i.quantity), 0) + trans;
+
+            const updateData = {
+                customerName: document.getElementById('edit-cust-name').value.trim(),
+                contactNumber: document.getElementById('edit-cust-phone').value.trim(),
+                orderType: document.getElementById('edit-order-type').value,
+                pickupDeliveryTime: document.getElementById('edit-cust-time').value.trim(),
+                paymentMethod: document.getElementById('edit-payment-method').value,
+                transportationFee: trans,
+                notesAddress: document.getElementById('edit-cust-notes').value.trim(),
+                items: items,
+                totalPrice: total
+            };
+
+            if(isFirebaseAvailable && db) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', id), updateData);
+            else {
+                const o = activeOrders.find(x => x.id === id);
+                if(o) Object.assign(o, updateData);
+                localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders));
+            }
+            
+            closeEditModal();
+            renderOrdersFeed();
+            showToast("Order Updated!", "success");
+        };
+
+        // Active Actions
+        window.updateOrderStatus = async (id, stat) => {
+            if(isFirebaseAvailable && db) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', id), {status: stat});
+            else { const o=activeOrders.find(x=>x.id===id); if(o) o.status=stat; localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders)); }
+            renderOrdersFeed();
+        };
+        window.togglePaymentStatus = async (id, stat) => {
+            if(isFirebaseAvailable && db) await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', id), {paymentStatus: stat});
+            else { const o=activeOrders.find(x=>x.id===id); if(o) o.paymentStatus=stat; localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders)); }
+            renderOrdersFeed();
+        };
+        window.promptDeleteSingleActiveOrder = (id) => {
+            showModal("Delete Order?", "Remove this order?", async () => {
+                if(isFirebaseAvailable && db) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', id));
+                else { activeOrders = activeOrders.filter(o=>o.id!==id); localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(activeOrders)); }
+                renderOrdersFeed(); showToast("Deleted.");
+            });
+        };
+        window.promptRemoveAllOrders = () => {
+            showModal("Clear Board?", "Delete all live orders?", async () => {
+                if(isFirebaseAvailable && db) for(let o of activeOrders) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', o.id));
+                else { activeOrders=[]; localStorage.removeItem(LOCAL_ORDERS_KEY); }
+                renderOrdersFeed(); showToast("Cleared.");
+            });
+        };
+
+        // Reports & Archives
+        window.triggerManualDailyArchive = async () => {
+            const today = getFormattedDate(new Date());
+            if(activeOrders.length === 0) return showToast("No orders to archive.");
+            const rep = archivedReports[today] || { orders:[], expenses:[] };
+            rep.orders = [...rep.orders, ...activeOrders];
+            
+            if(isFirebaseAvailable && db) {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', today), rep);
+                for(let o of activeOrders) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'activeOrders', o.id));
+            } else {
+                archivedReports[today] = rep; localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports));
+                activeOrders=[]; localStorage.removeItem(LOCAL_ORDERS_KEY);
+            }
+            renderOrdersFeed(); showToast("Archived Today's Orders!", "success");
+        };
+
+        window.loadSelectedDateReport = () => {
+            selectedDate = document.getElementById('report-date-picker').value || getFormattedDate(new Date());
+            const rep = archivedReports[selectedDate] || {orders:[], expenses:[]};
+            const gross = rep.orders.reduce((sum,o) => sum+(o.totalPrice||0), 0);
+            const exp = rep.expenses.reduce((sum,e) => sum+(parseFloat(e.amount)||0), 0);
+            
+            document.getElementById('stat-gross').innerText = `₱${gross.toFixed(2)}`;
+            document.getElementById('stat-expenses').innerText = `₱${exp.toFixed(2)}`;
+            document.getElementById('stat-net').innerText = `₱${(gross-exp).toFixed(2)}`;
+            document.getElementById('stat-orders-count').innerText = rep.orders.length;
+
+            computeOverviews();
+            renderExpensesList(rep.expenses);
+            renderArchivedList(rep.orders);
+        };
+
+        function computeOverviews() {
+            const curr = new Date(selectedDate+'T00:00:00');
+            const dw = curr.getDay(); 
+            const ws = new Date(curr); ws.setDate(curr.getDate()-dw);
+            const we = new Date(ws); we.setDate(ws.getDate()+6);
+            
+            const yr = curr.getFullYear(), mo = curr.getMonth();
+            const ms = new Date(yr,mo,1), me = new Date(yr,mo+1,0);
+
+            let wg=0, wx=0, wc=0;
+            let mg=0, mx=0, mc=0;
+
+            Object.keys(archivedReports).forEach(k => {
+                const d = new Date(k+'T00:00:00');
+                const r = archivedReports[k];
+                const dg = (r.orders||[]).reduce((s,o)=>s+(o.totalPrice||0),0);
+                const dx = (r.expenses||[]).reduce((s,e)=>s+(parseFloat(e.amount)||0),0);
+                
+                if(d>=ws && d<=we) { wg+=dg; wx+=dx; wc+=(r.orders||[]).length; }
+                if(d>=ms && d<=me) { mg+=dg; mx+=dx; mc+=(r.orders||[]).length; }
+            });
+
+            document.getElementById('weekly-range-label').innerText = `${getFormattedDate(ws)} to ${getFormattedDate(we)}`;
+            document.getElementById('weekly-gross').innerText = `₱${wg.toFixed(2)}`;
+            document.getElementById('weekly-expenses').innerText = `₱${wx.toFixed(2)}`;
+            document.getElementById('weekly-net').innerText = `₱${(wg-wx).toFixed(2)}`;
+            document.getElementById('weekly-orders').innerText = wc;
+
+            document.getElementById('monthly-range-label').innerText = curr.toLocaleString('default',{month:'long',year:'numeric'});
+            document.getElementById('monthly-gross').innerText = `₱${mg.toFixed(2)}`;
+            document.getElementById('monthly-expenses').innerText = `₱${mx.toFixed(2)}`;
+            document.getElementById('monthly-net').innerText = `₱${(mg-mx).toFixed(2)}`;
+            document.getElementById('monthly-orders').innerText = mc;
+        }
+
+        window.handleAddExpense = async (e) => {
+            e.preventDefault();
+            const desc = document.getElementById('expense-desc').value.trim();
+            const amt = parseFloat(document.getElementById('expense-amount').value);
+            const rep = archivedReports[selectedDate] || {orders:[], expenses:[]};
+            rep.expenses.push({description: desc, amount: amt});
+            if(isFirebaseAvailable && db) await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), rep);
+            else { archivedReports[selectedDate]=rep; localStorage.setItem(LOCAL_REPORTS_KEY, JSON.stringify(archivedReports)); }
+            document.getElementById('expense-form').reset(); loadSelectedDateReport();
+        };
+
+        function renderExpensesList(list) {
+            document.getElementById('expenses-list').innerHTML = list.map(e => `
+                <div class="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <span class="text-xs font-bold text-slate-800">${e.description}</span>
+                    <span class="text-xs font-black text-rose-600">₱${e.amount.toFixed(2)}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderArchivedList(orders) {
+            document.getElementById('archived-orders-list').innerHTML = orders.map(o => `
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex justify-between items-center">
+                    <div>
+                        <p class="font-extrabold text-sm text-slate-900">${o.customerName}</p>
+                        <p class="text-xs text-slate-500">${o.items.map(i=>i.quantity+'x '+i.name).join(', ')}</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="font-black text-brand-600">₱${o.totalPrice.toFixed(2)}</p>
+                        <button onclick="openReceiptModal('${o.id}', 'archive')" class="text-[10px] font-bold text-slate-400 hover:text-emerald-600 uppercase mt-1">View Receipt</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Receipt Handling
+        window.openReceiptModal = (id, src) => {
+            let o = null;
+            if(src==='active') o = activeOrders.find(x=>x.id===id);
+            else o = (archivedReports[selectedDate]?.orders||[]).find(x=>x.id===id);
+            if(!o) return;
+            currentReceiptOrder = o;
+
+            document.getElementById('rec-date').innerText = o.targetDate || getFormattedDate(new Date());
+            document.getElementById('rec-name').innerText = o.customerName;
+            document.getElementById('rec-type').innerText = o.orderType;
+            document.getElementById('rec-payment').innerText = o.paymentMethod;
+            document.getElementById('rec-time').innerText = o.pickupDeliveryTime; // Delivery Time Field Added
+            
+            const sub = o.items.reduce((s,i)=>s+(i.price*i.quantity),0);
+            document.getElementById('rec-items-list').innerHTML = o.items.map(i=>`<div class="flex justify-between"><span>${i.quantity}x ${i.name}</span><span class="font-bold">₱${(i.price*i.quantity).toFixed(2)}</span></div>`).join('');
+            document.getElementById('rec-subtotal').innerText = `₱${sub.toFixed(2)}`;
+            document.getElementById('rec-trans').innerText = `₱${(o.transportationFee||0).toFixed(2)}`;
+            document.getElementById('rec-total').innerText = `₱${o.totalPrice.toFixed(2)}`;
+            
+            document.getElementById('receipt-modal-container').classList.remove('hidden');
+        };
+        window.closeReceiptModal = () => document.getElementById('receipt-modal-container').classList.add('hidden');
+        window.captureReceiptScreenshot = () => {
+            html2canvas(document.getElementById('receipt-print-area'), {scale: 3}).then(c => {
+                const a = document.createElement('a'); a.download = `Receipt.jpg`; a.href = c.toDataURL("image/jpg"); a.click();
+            });
+        };
+
+        // Firebase Sync
+        function setupDataListeners() {
+            if(isFirebaseAvailable && db) {
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'activeOrders'), snap => {
+                    activeOrders=[]; snap.forEach(d=>activeOrders.push(d.data()));
+                    activeOrders.sort((a,b)=>b.timestamp-a.timestamp); runAutoStatusTransfer(); renderOrdersFeed();
+                });
+                onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'dailyReports'), snap => {
+                    archivedReports={}; snap.forEach(d=>archivedReports[d.id]=d.data()); loadSelectedDateReport();
+                });
+            } else {
+                activeOrders = JSON.parse(localStorage.getItem(LOCAL_ORDERS_KEY)||'[]');
+                archivedReports = JSON.parse(localStorage.getItem(LOCAL_REPORTS_KEY)||'{}');
+                runAutoStatusTransfer(); renderOrdersFeed(); loadSelectedDateReport();
+            }
+        }
+
+        // Modals & UI
+        let pendingAction = null;
+        function showModal(title, desc, cb) {
+            document.getElementById('modal-title').innerText=title; document.getElementById('modal-desc').innerText=desc;
+            pendingAction=cb; document.getElementById('modal-container').classList.remove('hidden');
+        }
+        window.closeModal = () => document.getElementById('modal-container').classList.add('hidden');
+        document.getElementById('modal-confirm-btn').addEventListener('click', async () => { if(pendingAction) await pendingAction(); window.closeModal(); });
+
+        function showToast(msg, type='success') {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            const icon = document.getElementById('toast-icon');
+            icon.className = type==='error' ? "fa-solid fa-circle-xmark text-rose-400 text-xl" : "fa-solid fa-circle-check text-brand-400 text-xl";
+            t.classList.replace('translate-y-[-150%]', 'translate-y-0'); t.classList.replace('opacity-0', 'opacity-100');
+            setTimeout(() => { t.classList.replace('translate-y-0', 'translate-y-[-150%]'); t.classList.replace('opacity-100', 'opacity-0'); }, 3000);
+        }
+
+        // Init
+        renderMenu();
+        populateTimeDropdown();
+        document.getElementById('report-date-picker').value = selectedDate;
+        setupDataListeners();
+    </script>
+</body>
+</html>
